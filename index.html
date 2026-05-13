@@ -216,7 +216,7 @@ tbody td.L{text-align:left;padding-left:10px;}
   <div class="tab" id="tab-senior" onclick="show('senior',this)">&#127968; Senior</div>
   <div class="tab" id="tab-inst" onclick="show('inst',this)">&#127968; สถาบัน</div>
   <div class="tab" id="tab-dash" onclick="show('dash',this)">&#128202; ภาพรวม</div>
-  <div class="tab" id="tab-logout" onclick="loDoLogout()" style="margin-left:auto;color:rgba(255,255,255,.5);font-size:11px">&#128274; ออก</div>
+  <div class="tab" id="tab-logout" onclick="loDoLogout()" style="margin-left:auto;background:rgba(255,255,255,.1);color:#fff;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700">&#128274; ออกจากระบบ</div>
 </div>
 <div class="session-info" id="session-info" style="display:none">
   <span class="s-badge" id="s-badge" onclick="loDoLogout()" title="คลิกเพื่อออกจากระบบ"></span>
@@ -642,7 +642,7 @@ function show(n,el){
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
   document.getElementById("pg-"+n).classList.add("active");el.classList.add("active");
 }
-renderPro();
+// renderPro() — moved to afterLogin
 
 // ===== DASHBOARD DATA (ตัวอย่าง) =====
 const UNIT_COLORS = {
@@ -1090,8 +1090,7 @@ function drawActBars(){
     </div>`).join("");
 }
 
-// init dashboard
-renderDash();
+// renderDash() — moved to afterLogin
 
 
 // ================================================================
@@ -1207,6 +1206,9 @@ async function afterLogin() {
     }
   }
 
+  // รัน render หลัง login
+  renderPro();
+  renderDash();
   // โหลดข้อมูลจาก API แล้วแสดงในหน้า
   await churchLoadAll();
   churchRenderMembersToChecklist();
@@ -1215,19 +1217,22 @@ async function afterLogin() {
 // ===== LOAD ALL DATA =====
 async function churchLoadAll() {
   showLoading(true);
+  apiToast('🔄 กำลังดึงข้อมูลจาก Sheet...','');
   try {
     await Promise.all([churchLoadCares(), churchLoadMembers()]);
     churchLoadNewPeople();
     churchFillCareDropdowns();
+    apiToast('✅ โหลดข้อมูลสำเร็จ '+churchMembers.length+' คน','ok');
   } catch(e) {
-    apiToast('⚠️ เชื่อมต่อ API ไม่ได้ — ใช้ข้อมูล Demo แทน','err');
+    console.error('API Error:', e);
+    apiToast('⚠️ เชื่อมต่อ API ไม่ได้: '+e.message,'err');
   }
   showLoading(false);
 }
 
 async function churchLoadCares() {
   try {
-    const r = await fetch(CHURCH_API+'?action=cares');
+    const r = await fetch(CHURCH_API+'?action=cares', {mode:'cors'});
     const d = await r.json();
     if(d.ok) {
       churchCares = d.data;
