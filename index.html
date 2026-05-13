@@ -183,18 +183,18 @@ tbody td.L{text-align:left;padding-left:10px;}
 <body>
  
 <!-- LOGIN OVERLAY -->
-<div id="login-overlay">
+<div id="login-overlay" style="display:none">
   <div class="lo-logo">⛪</div>
   <div class="lo-title">คริสตจักรราชบุรี</div>
   <div class="lo-sub">ระบบติดตามสมาชิกและกิจกรรม</div>
   <div class="lo-card">
     <div class="lo-section-label">เลือกหน่วย</div>
     <div class="lo-unit-grid">
-      <button class="lo-unit-btn pro" data-u="โปร" onclick="loSelectUnit(this)">🏠 หน่วย Pro</button>
-      <button class="lo-unit-btn geo" data-u="ภูมิศาสตร์" onclick="loSelectUnit(this)">🏠 ภูมิศาสตร์</button>
-      <button class="lo-unit-btn senior" data-u="ซีเนียร์" onclick="loSelectUnit(this)">🏠 Senior</button>
-      <button class="lo-unit-btn inst" data-u="สถาบัน" onclick="loSelectUnit(this)">🏠 สถาบัน</button>
-      <button class="lo-unit-btn admin lo-admin-btn" data-u="Admin" onclick="loSelectUnit(this)">⚙️ Admin</button>
+      <button class="lo-unit-btn pro" data-u="โปร" data-color="#1565C0" data-bg="#0d1929" data-fgcolor="#90CAF9" onclick="loSelectUnit(this)">🏠 หน่วย Pro</button>
+      <button class="lo-unit-btn geo" data-u="ภูมิศาสตร์" data-color="#2E7D32" data-bg="#0a1a0a" data-fgcolor="#A5D6A7" onclick="loSelectUnit(this)">🏠 ภูมิศาสตร์</button>
+      <button class="lo-unit-btn senior" data-u="ซีเนียร์" data-color="#6A1B9A" data-bg="#1a0d29" data-fgcolor="#CE93D8" onclick="loSelectUnit(this)">🏠 Senior</button>
+      <button class="lo-unit-btn inst" data-u="สถาบัน" data-color="#BF360C" data-bg="#290d0d" data-fgcolor="#FFAB91" onclick="loSelectUnit(this)">🏠 สถาบัน</button>
+      <button class="lo-unit-btn admin lo-admin-btn" data-u="Admin" data-color="#FFD700" data-bg="#1a1a0d" data-fgcolor="#FFD700" onclick="loSelectUnit(this)">⚙️ Admin</button>
     </div>
     <div class="lo-section-label">รหัสผ่าน</div>
     <div class="lo-pw-wrap">
@@ -1113,22 +1113,57 @@ let churchCares = [];
  
 // ===== LOGIN =====
 function loSelectUnit(btn) {
-  document.querySelectorAll('.lo-unit-btn').forEach(b=>b.classList.remove('selected'));
+  // ลบ selected ทุกปุ่มก่อน
+  document.querySelectorAll('.lo-unit-btn').forEach(function(b) {
+    b.classList.remove('selected');
+    b.style.borderColor = '#30363D';
+    b.style.background = '#21262D';
+    b.style.color = '#E6EDF3';
+  });
+  // เพิ่ม selected ให้ปุ่มที่กด
   btn.classList.add('selected');
+  btn.style.borderColor = btn.dataset.color || '#FFD700';
+  btn.style.background = btn.dataset.bg || '#1c2a1a';
+  btn.style.color = btn.dataset.fgcolor || '#FFD700';
   loSelectedUnit = btn.dataset.u;
+  // clear error
+  const errEl = document.getElementById('lo-err');
+  if(errEl) { errEl.textContent = ''; errEl.style.display = 'none'; }
 }
 function loTogglePw() {
   const pw = document.getElementById('lo-pw');
   pw.type = pw.type==='password'?'text':'password';
 }
 function loDoLogin() {
-  if(!loSelectedUnit){document.getElementById('lo-err').textContent='กรุณาเลือกหน่วยก่อน';return;}
+  const errEl = document.getElementById('lo-err');
+  if(!loSelectedUnit) {
+    errEl.textContent = 'กรุณาเลือกหน่วยก่อน';
+    errEl.style.display = 'block';
+    return;
+  }
   const pw = document.getElementById('lo-pw').value;
+  if(!pw) {
+    errEl.textContent = 'กรุณากรอกรหัสผ่าน';
+    errEl.style.display = 'block';
+    return;
+  }
   const cred = LO_CREDS[loSelectedUnit];
-  if(!cred||cred.pw!==pw){document.getElementById('lo-err').textContent='รหัสผ่านไม่ถูกต้อง';return;}
-  churchSession = {username:loSelectedUnit, unit:cred.unit, role:cred.role, color:cred.color, token:btoa(loSelectedUnit+':'+Date.now())};
-  localStorage.setItem('church_sess', JSON.stringify(churchSession));
-  document.getElementById('login-overlay').style.display='none';
+  if(!cred || cred.pw !== pw) {
+    errEl.textContent = '❌ รหัสผ่านไม่ถูกต้อง';
+    errEl.style.display = 'block';
+    errEl.style.color = '#f87171';
+    return;
+  }
+  errEl.textContent = '';
+  errEl.style.display = 'none';
+  churchSession = {
+    username: loSelectedUnit,
+    unit: cred.unit,
+    role: cred.role,
+    color: cred.color,
+    token: btoa(loSelectedUnit + ':' + Date.now())
+  };
+  document.getElementById('login-overlay').style.display = 'none';
   afterLogin();
 }
 function loDoLogout() {
@@ -1303,12 +1338,14 @@ function apiToast(msg,type){
 }
  
 // ===== INIT =====
-document.addEventListener('DOMContentLoaded',()=>{
-  if(!loRestoreSession()){
-    document.getElementById('login-overlay').style.display='flex';
-    const mtb=document.getElementById('main-tab-bar');
-    if(mtb) mtb.style.display='none';
-  }
+document.addEventListener('DOMContentLoaded', function() {
+  // ล้าง session เก่าเสมอ เพื่อให้ login ทุกครั้ง
+  localStorage.removeItem('church_sess');
+  churchSession = null;
+  // แสดง Login
+  document.getElementById('login-overlay').style.display = 'flex';
+  const mtb = document.getElementById('main-tab-bar');
+  if(mtb) mtb.style.display = 'none';
 });
  
 </script>
