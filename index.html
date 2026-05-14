@@ -234,10 +234,10 @@ tbody td.L{text-align:left;padding-left:10px;}
 .dv2-unit-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:6px;}
 .dv2-unit-name{font-size:15px;font-weight:800;color:#3A2F22;}
 .dv2-unit-total{font-size:11px;font-weight:700;padding:4px 12px;border-radius:12px;}
-.dv2-unit-row{display:grid;grid-template-columns:60px 1fr 40px;gap:10px;align-items:center;margin-bottom:7px;font-size:12px;}
+.dv2-unit-row{display:grid;grid-template-columns:90px 1fr 50px;gap:10px;align-items:center;margin-bottom:7px;font-size:12px;}
 .dv2-unit-row:last-child{margin-bottom:0;}
 .dv2-unit-row .nm{color:#5C4830;font-weight:500;text-align:right;}
-.dv2-unit-row .val{font-weight:800;}
+.dv2-unit-row .val{font-weight:800;text-align:right;}
 .dv2-unit-bar{height:11px;background:#F3EBDD;border-radius:6px;overflow:hidden;}
 .dv2-unit-bar-fill{height:100%;border-radius:6px;transition:width .6s ease;}
 @media(max-width:520px){.dv2-hero-date{font-size:18px;}.dv2-hero-stat .num{font-size:24px;}.dv2-donut-wrap{grid-template-columns:100px 1fr;}}
@@ -800,7 +800,7 @@ function renderDash(){
 // ===== VIEW 1: ภาพรวมจังหวัด (Redesign — clean & friendly) =====
 function thaiDate(){
   const TH_M=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-  let d=new Date(); d.setDate(d.getDate()-((d.getDay()+7)%7)); // Sunday ล่าสุด
+  let d=new Date(); d.setDate(d.getDate()-((d.getDay()+7)%7));
   return 'วันอาทิตย์ที่ '+d.getDate()+' '+TH_M[d.getMonth()]+' '+(d.getFullYear()+543);
 }
 
@@ -809,7 +809,6 @@ function renderView1(period){
   const dateStr = thaiDate();
   const acts = d.activities || {};
 
-  // ===== Hero =====
   const hero = `
   <div class="dv2-hero">
     <div class="dv2-hero-label">&#128202; สถิติการนมัสการ</div>
@@ -834,7 +833,6 @@ function renderView1(period){
     </div>
   </div>`;
 
-  // ===== Special records =====
   const special = `
   <div class="dv2-special-wrap">
     <div class="dv2-special-title">&#128221; บันทึกพิเศษสัปดาห์นี้</div>
@@ -846,7 +844,6 @@ function renderView1(period){
     </div>
   </div>`;
 
-  // ===== Quick stat grid =====
   const grid = `
   <div class="dv2-section-title">&#128200; ตัวเลขสำคัญ</div>
   <div class="dv2-grid2">
@@ -858,7 +855,6 @@ function renderView1(period){
     <div class="dv2-stat"><div class="ic">&#128081;</div><div class="num" style="color:#1A237E">${acts.david||0}</div><div class="lab">ดาวิด (รวม)</div></div>
   </div>`;
 
-  // ===== Compare แคร์ vs โบสถ์ ต่อหน่วย =====
   const units = Object.entries(DEMO.byUnit);
   const maxV = Math.max(...units.map(([,u])=>Math.max(u.church,u.care)));
   const cmpRows = units.map(([un,u])=>`
@@ -882,7 +878,6 @@ function renderView1(period){
     </div>
   </div>`;
 
-  // ===== Donut: สัดส่วนหน่วยงาน (ใช้ church) =====
   const totalC = units.reduce((s,[,u])=>s+u.church,0);
   let acc=0;
   const C=60, R=44, SW=14;
@@ -919,7 +914,6 @@ function renderView1(period){
     </div>
   </div>`;
 
-  // ===== Per-unit sectioned cards =====
   const unitSections = units.map(([un,u])=>{
     const caresData = (DEMO.byUnitCares[un]&&DEMO.byUnitCares[un].cares)||{};
     const cares = Object.entries(caresData);
@@ -945,7 +939,6 @@ function renderView1(period){
   <div class="dv2-section-title">&#128202; ยอดรวม แต่ละหน่วยงาน</div>
   ${unitSections}`;
 
-  // ===== Offering =====
   const offRows = Object.entries(d.offering_by_unit||{}).map(([un,v])=>{
     const pc = Math.round(v/d.offering_total*100);
     const cl = UNIT_COLORS[un]||"#888";
@@ -961,7 +954,6 @@ function renderView1(period){
     ${offRows}
   </div>`;
 
-  // ===== คนใหม่ =====
   const newPpl = `
   <div class="dv2-section-title">&#128100; รายชื่อคนใหม่สัปดาห์นี้</div>
   <div class="tw"><div class="tt" style="background:#00695C">${dateStr}</div>
@@ -1329,6 +1321,8 @@ function loDoLogin() {
     token: btoa(loSelectedUnit + ':' + Date.now())
   };
   document.getElementById('login-overlay').style.cssText = 'display:none !important;';
+  // บันทึก session ใน localStorage
+  try { localStorage.setItem('church_sess', JSON.stringify(churchSession)); } catch(e){}
   afterLogin();
 }
 function loDoLogout() {
@@ -1383,17 +1377,21 @@ async function afterLogin() {
 async function churchLoadAll() {
   showLoading(true);
   apiToast('🔄 กำลังดึงข้อมูลจาก Sheet...','');
-  try {
-    await Promise.all([churchLoadCares(), churchLoadMembers()]);
-    churchLoadNewPeople();
-    churchFillCareDropdowns();
+  // ใช้ allSettled เพื่อไม่ให้ failure ตัวเดียวหยุดทุกอย่าง
+  const results = await Promise.allSettled([churchLoadCares(), churchLoadMembers()]);
+  // เติม dropdown ทุกหน่วยเสมอ (ใช้ fallback ถ้า API ล่ม)
+  try { churchFillCareDropdowns(); } catch(e){ console.warn('fillCareDropdowns:',e); }
+  const memErr = results[1].status==='rejected' || !churchMembers || !churchMembers.length;
+  if(memErr) {
+    apiToast('⚠️ API ดึงสมาชิกไม่ได้ — แสดงตัวอย่างให้ดูโครงสร้าง','err');
+  } else {
     apiToast('✅ โหลดข้อมูลสำเร็จ '+churchMembers.length+' คน','ok');
-  } catch(e) {
-    console.error('API Error:', e);
-    apiToast('⚠️ เชื่อมต่อ API ไม่ได้: '+e.message,'err');
   }
   showLoading(false);
 }
+
+// stub กันไม่ให้ ReferenceError (ฟังก์ชันเดิมไม่ได้ define ไว้)
+function churchLoadNewPeople(){ /* placeholder */ }
 
 async function churchLoadCares() {
   try {
@@ -1415,6 +1413,7 @@ async function churchLoadCares() {
       {id:'C07',name:'แคร์ สถาบัน เมือง',unit:'หน่วยสถาบัน',district:'อ.เมือง'},
       {id:'C08',name:'แคร์ สถาบัน จอมบึง',unit:'หน่วยสถาบัน',district:'อ.จอมบึง'},
       {id:'C09',name:'แคร์ สถาบัน โพธาราม',unit:'หน่วยสถาบัน',district:'อ.โพธาราม'},
+      {id:'C10',name:'คจ.เด็ก',unit:'ทุกหน่วย',district:'ทุกอำเภอ'},
     ];
     if(churchSession.unit!=='all') churchCares=churchCares.filter(c=>c.unit===churchSession.unit);
   }
@@ -1425,9 +1424,60 @@ async function churchLoadMembers() {
     const unitParam=churchSession.unit==='all'?'all':encodeURIComponent(churchSession.unit);
     const r=await fetch(CHURCH_API+'?action=members&token='+churchSession.token+'&unit='+unitParam);
     const d=await r.json();
-    if(d.ok) churchMembers=d.data;
-    else churchMembers=[];
-  } catch(e){ churchMembers=[]; }
+    if(d.ok && d.data && d.data.length) { churchMembers=d.data; return; }
+    throw new Error('empty');
+  } catch(e){
+    // Fallback: ใช้ตัวอย่างสมาชิกจริงจากชีต (เพื่อให้เห็นโครงสร้างเวลา API ล่ม)
+    churchMembers = [
+{id:"M001",prefix:"นาย",name:"พงศธร ดาราพาณิชย์",nick:"ไผ่/บี๋",status:"หนค.",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M002",prefix:"นาย",name:"วิเชษฐ แก้วคำ",nick:"กาเหว่า",status:"หนค.",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M003",prefix:"นาย",name:"ศุภศักดิ์ ชัยธัชวาณิชย์",nick:"สิบ/นิว",status:"หนค.",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M004",prefix:"นางสาว",name:"นันท์นภัส ขำอิน",nick:"แอม",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M005",prefix:"น.ส.",name:"รัชณาพร มณีจันทร์",nick:"เดียร์",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M015",prefix:"นางสาว",name:"ธนันพัชร บัวเย็น",nick:"แม่ปู",status:"ผส.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M016",prefix:"นาย",name:"ประสงค์ ขำอิน",nick:"พ่อสงค์",status:"ผส.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M017",prefix:"นาย",name:"สิทธิคุณ ลิมป์พาณิชย์กูล",nick:"ทีม",status:"หนน.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M018",prefix:"ว่าที่ร.ต.หญิง",name:"ฐิดารัตน์ พ่วงศิริ",nick:"ทราย",status:"หนค.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M019",prefix:"ทพ.ญ.",name:"ณัชค์สมิน พัชรวิภาคกิจ",nick:"หมิว",status:"หนค.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M037",prefix:"นาย",name:"ณัฐวุฒิ มีแสง",nick:"แมนยู",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Startup Pro",district:"อ.เมือง"},
+{id:"M038",prefix:"นาย",name:"แอ้   ไม่มีนามสกุล",nick:"แอ้",status:"หนค.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
+{id:"M039",prefix:"น.ส.",name:"แป้ง  ไม่มีนามสกุล",nick:"แป้ง",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
+{id:"M040",prefix:"นาย",name:"เปรมชัย   ซีแซ่",nick:"เปรม",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
+{id:"M041",prefix:"น.ส.",name:"ฟ้า   ไม่มีนามสกุล",nick:"ฟ้า",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
+{id:"M042",prefix:"น.ส.",name:"สุธิดา  คงอยู่",nick:"เล",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
+{id:"M044",prefix:"นาย",name:"วัฒนา  วงศ์ทอง",nick:"นาธาน",status:"หนน.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M045",prefix:"นาย",name:"ใจวา -",nick:"ใจวา",status:"หนค.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M046",prefix:"น.ส.",name:"ปราณี วงศ์ทอง",nick:"ณี",status:"หนค.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M047",prefix:"น.ส.",name:"สายน้ำ  บุญธานี",nick:"ดาว",status:"หนค.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M048",prefix:"น.ส.",name:"อรอุมา  บุญทอง",nick:"ลิลลี่",status:"หนค.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M094",prefix:"นาง",name:"สุภ้สตรา จูมงคล",nick:"โอ์",status:"พล.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.บ้านโป่ง"},
+{id:"M095",prefix:"นาง",name:"ธนกร สนเปี่ยม",nick:"เชอรี่",status:"หนค.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.เมือง"},
+{id:"M096",prefix:"นางสาว",name:"นภ้สอร เทียนเฮง",nick:"หนู",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.บ้านโป่ง"},
+{id:"M097",prefix:"นาย",name:"บุญลือ นาควงษ์",nick:"อ๊อด",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.บ้านโป่ง"},
+{id:"M098",prefix:"นาง",name:"สมพงษ์ คำจันทร์",nick:"แม่ตุ่ม",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.บ้านโป่ง"},
+{id:"M101",prefix:"นาง",name:"ชนัญรัตน์ โพธิ์สนิทศักดิ์",nick:"ก้อน",status:"พล",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M102",prefix:"นาง",name:"สุภ้สตรา จูมงคล",nick:"โอ์",status:"พล.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M103",prefix:"นางสาว",name:"สุพิชญ์นันท์ หอมทอง",nick:"ขวัญเรือน",status:"หนน.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M104",prefix:"นางสาว",name:"บำเพ็ญ จิตเดชขจร",nick:"เพ็ญ",status:"หนค.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M105",prefix:"นาง",name:"สมศรี แดนสว่าง",nick:"พี่จี้",status:"หนค.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M131",prefix:"นาย",name:"กฤตภาส ปักษ์ชัยภูมิ",nick:"กิจการ",status:"หนน.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M132",prefix:"น.ส.",name:"ชมพู่ พรพิทัก์พงศ์",nick:"ชมพู่",status:"หนค.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M133",prefix:"น.ส.",name:"สุรีรัตน์ วิจัยรินทร์",nick:"แตน",status:"หนค.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M134",prefix:"นาย",name:"ธิติธาม เกิดชื่น",nick:"อาร์ม",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M135",prefix:"นาย",name:"นิภัทร เรือนใจดี",nick:"เกาะ",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M149",prefix:"น.ส.",name:"มารีญา บุญช่วย",nick:"ปอ",status:"หนค.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M150",prefix:"น.ส.",name:"วัลลี โคสินธิ์",nick:"เอสเธอร์",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M151",prefix:"น.ส.",name:"อิศรา ทุบะ",nick:"แป้ง",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M152",prefix:"นาย",name:"กิตติพันธ์ อีสู",nick:"บอล",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M153",prefix:"นาย",name:"กิตติ วชิระ",nick:"ดาวิด",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M166",prefix:"น.ส.",name:"นางสาวนุตา วงษ์ทอง",nick:"กาโตะ",status:"หนค.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
+{id:"M167",prefix:"น.ส.",name:"นางสาวภูริชญา อำไพศรี",nick:"แนน",status:"หนค.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
+{id:"M168",prefix:"น.ส.",name:"นางสาวคุณัชญา บาง",nick:"ตาล",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
+{id:"M169",prefix:"น.ส.",name:"นางสาวธิติกาญจน์ อุดมสุข",nick:"เหมย",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
+{id:"M170",prefix:"นาย",name:"นางสาวพัชรินทร์ หอมสุด",nick:"เจนนิส",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"}
+];
+    if(churchSession.unit!=='all') churchMembers = churchMembers.filter(m => m.unit === churchSession.unit);
+  }
 }
 
 
@@ -1451,7 +1501,7 @@ function genWeekOptions(selId) {
 
 // ===== RENDER MEMBERS INTO CHECKLIST TABLES =====
 function churchRenderMembersToChecklist() {
-  if(!churchMembers || churchMembers.length === 0) return;
+  if(!churchMembers) churchMembers = [];
 
   // Map unit → page id
   const unitPageMap = {
@@ -1594,7 +1644,7 @@ async function churchSaveNewPeople(unitId) {
   showLoading(true);
   for(const p of people){
     try{
-      await fetch(CHURCH_API,{method:'POST',body:JSON.stringify({action:'saveNewPerson',token:churchSession.token,person:{...p,date:ds,activity:'',leader:p.type==='เยี่ยมเยียนพิเศษ'?'นับในยอดผู้นำ':'',note:''}})});
+      await fetch(CHURCH_API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveNewPerson',token:churchSession.token,person:{...p,date:ds,activity:'',leader:p.type==='เยี่ยมเยียนพิเศษ'?'นับในยอดผู้นำ':'',note:''}})});
     }catch(e){}
   }
   showLoading(false);
