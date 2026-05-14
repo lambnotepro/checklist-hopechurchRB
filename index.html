@@ -1286,7 +1286,7 @@ function drawActBars(){
 
 
 // ================================================================
-// API & AUTH — Church Ratchaburihttps://
+// API & AUTH — Church Ratchaburi
 // ================================================================
 const CHURCH_API = 'https://script.google.com/macros/s/AKfycbyDng7YujwoKGcF4Afj4fPtgAtnKEY_oWZ46wNa-UxCKoagmtIoSmdL0GiCbVOFDwxYaQ/exec';
 
@@ -1359,7 +1359,7 @@ function loDoLogin() {
     unit: cred.unit,
     role: cred.role,
     color: cred.color,
-    token: btoa(loSelectedUnit + ':' + Date.now())
+    token: btoa(unescape(encodeURIComponent(loSelectedUnit + ':' + Date.now())))
   };
   console.log('[login] session created:', churchSession);
   try { localStorage.setItem('church_sess', JSON.stringify(churchSession)); } catch(e){ console.warn('save sess failed:',e); }
@@ -1980,7 +1980,8 @@ function churchOnCareChange(sel, unitId) {
 
   // แยกสมาชิกในแคร์: ผู้ใหญ่ (ไม่ใช่ ผส., สถ., ผถ.) vs ผู้สนใจ ผส.
   const inCare = (churchMembers||[]).filter(m => m.care === care && !['สถ.','ผถ.'].includes(m.status));
-  const adults = inCare.filter(m => m.status !== 'ผส.');
+  // ตัด คจ.เด็ก ออกจากตารางผู้ใหญ่ (ไปอยู่ตารางเด็ก) และ ผส. ไปอยู่ตารางคนใหม่
+  const adults = inCare.filter(m => m.status !== 'ผส.' && m.status !== 'คจ.เด็ก');
   const interested = inCare.filter(m => m.status === 'ผส.');
   // เรียงตามลำดับสถานะ
   adults.sort((a,b)=> statusRank(a.status) - statusRank(b.status));
@@ -2112,11 +2113,14 @@ function renderKidsTable(unitId, care) {
     html += '</tbody></table>';
   }
   wrap.innerHTML = html;
-  // วางใต้ตารางผู้ใหญ่ (.tw หรือ .save-weekly-wrap)
+  // วางใต้ตารางผู้ใหญ่ — ก่อนปุ่มบันทึก
   const saveWrap = page.querySelector('.save-weekly-wrap');
-  const after = saveWrap || page.querySelector('.tw');
-  if(after && after.parentNode) {
-    after.parentNode.insertBefore(wrap, after.nextSibling);
+  const tw = page.querySelector('.tw');
+  if(saveWrap && saveWrap.parentNode) {
+    // แทรกก่อนปุ่มบันทึก → ลำดับ: ตารางผู้ใหญ่ → ตารางเด็ก → ปุ่มบันทึก
+    saveWrap.parentNode.insertBefore(wrap, saveWrap);
+  } else if(tw && tw.parentNode) {
+    tw.parentNode.insertBefore(wrap, tw.nextSibling);
   } else {
     page.appendChild(wrap);
   }
@@ -2131,6 +2135,7 @@ function ensureSaveButton(page, unitId) {
   wrap.className = 'save-weekly-wrap';
   wrap.style.cssText = 'display:flex;justify-content:flex-end;gap:10px;padding:10px 14px;background:#fff;border-radius:10px;margin-top:-8px;margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,.05);';
   wrap.innerHTML =
+    '<div style="font-size:11px;color:#5C4830;align-self:center;margin-right:8px">💡 บันทึกข้อมูลผู้ใหญ่ + เด็ก ในแคร์นี้</div>' +
     '<button onclick="churchSaveWeekly(\''+unitId+'\')" class="ab" style="background:#1565C0;color:#fff;padding:10px 22px;font-size:13px;border:none;border-radius:8px;cursor:pointer;font-weight:700;box-shadow:0 2px 4px rgba(21,101,192,.3)">💾 บันทึกเข้า Weekly Log</button>';
   tw.parentNode.insertBefore(wrap, tw.nextSibling);
 }
@@ -2230,7 +2235,11 @@ async function churchSaveWeekly(unitId) {
 
   if(!rows.length) return apiToast('⚠️ ยังไม่ได้ติ๊ก/กรอกอะไรเลย','err');
 
-  if(!confirm('ยืนยันบันทึก '+rows.length+' แถว เข้า Weekly Log\nสัปดาห์: '+dateStr+'\nแคร์: '+care+' ?')) return;
+  // นับแยกผู้ใหญ่ vs เด็ก สำหรับ confirm
+  let adultCount = 0, kidCount = 0;
+  rows.forEach(r => { if((r.id||'').startsWith('K')) kidCount++; else adultCount++; });
+
+  if(!confirm('ยืนยันบันทึกเข้า Weekly Log?\n\nสัปดาห์: '+dateStr+'\nแคร์: '+care+'\nผู้ใหญ่: '+adultCount+' แถว\nเด็ก (คจ.เด็ก): '+kidCount+' แถว\nรวม: '+rows.length+' แถว')) return;
 
   showLoading(true);
   try {
