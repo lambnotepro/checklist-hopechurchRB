@@ -280,7 +280,7 @@ tbody td.L{text-align:left;padding-left:10px;}
   <div class="tab" id="tab-senior" onclick="show('senior',this)">&#127968; Senior</div>
   <div class="tab" id="tab-inst" onclick="show('inst',this)">&#127968; สถาบัน</div>
   <div class="tab" id="tab-dash" onclick="show('dash',this)">&#128202; ภาพรวม</div>
-  <div class="tab" id="tab-logout" onclick="loDoLogout()" style="margin-left:auto;background:rgba(255,255,255,.1);color:#fff;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700">&#128274; ออกจากระบบ</div>
+
 </div>
 <div class="session-info" id="session-info" style="display:none">
   <span class="s-badge" id="s-badge" onclick="loDoLogout()" title="คลิกเพื่อออกจากระบบ"></span>
@@ -621,10 +621,14 @@ const MBR={
 const CK={};
 // 6 CB: อร(0),คจ(1),อท(2),พพ(3),ดว(4),คร(5)  3 NUM: ยย,1:1,ปก  1 ถวาย
 function renderPro(){
-  const c=document.getElementById("pc").value;
-  const w=parseInt(document.getElementById("pw").value);
-  const cn=c==="m"?"แคร์ Pro เมือง":"แคร์ Pro โพธาราม";
-  document.getElementById("p-ttl").textContent=cn+" — อาทิตย์ที่ "+WK[w];
+  const pcSel = document.getElementById("pc");
+  const pwSel = document.getElementById("pw");
+  const c = pcSel ? pcSel.value : "";
+  const cnText = pcSel && pcSel.options[pcSel.selectedIndex] ? pcSel.options[pcSel.selectedIndex].text : "";
+  const wkText = pwSel && pwSel.options[pwSel.selectedIndex] ? pwSel.options[pwSel.selectedIndex].text : "";
+  const titleEl = document.getElementById("p-ttl");
+  if(titleEl) titleEl.textContent = (cnText.replace(/^--.*--$/, "เลือกแคร์ก่อน") || "เลือกแคร์ก่อน") + " — " + (wkText || "");
+  const w=parseInt(pwSel ? pwSel.value : "0") || 0;
   if(!CK[c])CK[c]={};if(!CK[c][w])CK[c][w]={};
   const mb=MBR[c]||[];
   let kj=0,dw=0,cr=0,of=0,h="";
@@ -806,9 +810,10 @@ function renderView1(period){
   const dateStr = thaiDate();
   const acts = d.activities || {};
 
-  // คำนวณยอดสมาชิกทั้งหมดและแยกหน่วย (จาก roster)
   const units = Object.entries(DEMO.byUnit);
-  const totalRoster = units.reduce((s,[,u])=>s+(u.members||0),0);
+  const totalAdults = units.reduce((s,[,u])=>s+(u.adults||0),0);
+  const totalKids = DEMO.totalKids || 0;
+  const totalRoster = totalAdults + totalKids;
   const totalChurch = units.reduce((s,[,u])=>s+(u.church||0),0);
   const totalCare = units.reduce((s,[,u])=>s+(u.care||0),0);
 
@@ -816,7 +821,7 @@ function renderView1(period){
   <div class="dv2-hero">
     <div class="dv2-hero-label">&#128202; สถิติการนมัสการ</div>
     <div class="dv2-hero-date">${dateStr}</div>
-    <div class="dv2-hero-sub">ยอดสมาชิกทั้งหมด <strong style="color:#FFD700">${totalRoster}</strong> คน &middot; ยอดมาร่วมประจำสัปดาห์</div>
+    <div class="dv2-hero-sub">สมาชิกทั้งหมด <strong style="color:#FFD700">${totalRoster}</strong> คน &middot; ผู้ใหญ่ ${totalAdults} + เด็ก ${totalKids}</div>
     <div class="dv2-hero-stats">
       <div class="dv2-hero-stat">
         <div class="num">${totalCare||0}</div>
@@ -854,18 +859,31 @@ function renderView1(period){
     </div>
   </div>`;
 
-  // ===== ยอดสมาชิกแต่ละหน่วย (roster) =====
-  const rosterSection = `
-  <div class="dv2-section-title">&#128101; ยอดสมาชิกแต่ละหน่วย (Active roster)</div>
-  <div class="dv2-grid2">
-  ${units.map(([un,u])=>`
+  // ===== ยอดสมาชิกแต่ละหน่วย (roster) + คจ.เด็ก รวม =====
+  const unitCards = units.map(([un,u])=>`
     <div class="dv2-stat" style="border-top:3px solid ${u.color}">
       <div class="ic">&#127968;</div>
-      <div class="num" style="color:${u.color}">${u.members||0}</div>
+      <div class="num" style="color:${u.color}">${u.adults||0}</div>
       <div class="lab">${un}</div>
-      <div class="sub">มาแคร์: ${u.care||0} &middot; มาโบสถ์: ${u.church||0}</div>
-    </div>`).join('')}
-  </div>`;
+      <div class="sub">ผู้ใหญ่ &middot; มาแคร์ ${u.care||0} / มาโบสถ์ ${u.church||0}</div>
+    </div>`).join('');
+  const kidsCard = `
+    <div class="dv2-stat" style="border-top:3px solid #00695C;background:linear-gradient(135deg,#E0F2F1,#fff)">
+      <div class="ic">&#128118;</div>
+      <div class="num" style="color:#00695C">${totalKids}</div>
+      <div class="lab">คจ.เด็ก</div>
+      <div class="sub">รวมจากทุกหน่วย</div>
+    </div>`;
+  const combinedCard = `
+    <div class="dv2-stat" style="border-top:3px solid #FFD700;background:linear-gradient(135deg,#FFF8E1,#fff)">
+      <div class="ic">&#128101;</div>
+      <div class="num" style="color:#B8862E">${totalRoster}</div>
+      <div class="lab">รวมทั้งหมด</div>
+      <div class="sub">ผู้ใหญ่ ${totalAdults} + เด็ก ${totalKids}</div>
+    </div>`;
+  const rosterSection = `
+  <div class="dv2-section-title">&#128101; ยอดสมาชิกแต่ละหน่วย (Active roster)</div>
+  <div class="dv2-grid2">${unitCards}${kidsCard}${combinedCard}</div>`;
 
   // Compare bars (this week)
   const maxV = Math.max(...units.map(([,u])=>Math.max(u.church||0,u.care||0)), 1);
@@ -890,11 +908,15 @@ function renderView1(period){
     </div>
   </div>`;
 
-  // Donut: roster distribution
+  // Donut: roster distribution (5 segments: 4 units + kids)
+  const donutItems = [
+    ...units.map(([un,u])=>({name:un, val:u.adults||0, color:u.color})),
+    {name:'คจ.เด็ก', val:totalKids, color:'#00695C'}
+  ];
   let acc=0;
   const C=60, R=44, SW=14;
-  const arcs = totalRoster>0 ? units.map(([un,u])=>{
-    const frac = (u.members||0)/totalRoster;
+  const arcs = totalRoster>0 ? donutItems.map(it=>{
+    const frac = it.val/totalRoster;
     if(!frac) return '';
     const start = acc; acc += frac;
     const a1 = (start*2*Math.PI)-Math.PI/2;
@@ -902,14 +924,14 @@ function renderView1(period){
     const x1=C+R*Math.cos(a1), y1=C+R*Math.sin(a1);
     const x2=C+R*Math.cos(a2), y2=C+R*Math.sin(a2);
     const large=frac>0.5?1:0;
-    return `<path d="M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2}" stroke="${u.color}" stroke-width="${SW}" fill="none"/>`;
+    return `<path d="M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2}" stroke="${it.color}" stroke-width="${SW}" fill="none"/>`;
   }).join("") : '';
-  const donutLegend = units.map(([un,u])=>{
-    const pc = totalRoster>0 ? Math.round((u.members||0)/totalRoster*100) : 0;
+  const donutLegend = donutItems.map(it=>{
+    const pc = totalRoster>0 ? Math.round(it.val/totalRoster*100) : 0;
     return `<div class="ln">
-      <span style="width:14px;height:14px;border-radius:50%;background:${u.color};display:inline-block"></span>
-      <span class="nm">${un}</span>
-      <span class="nu" style="color:${u.color}">${u.members||0}</span>
+      <span style="width:14px;height:14px;border-radius:50%;background:${it.color};display:inline-block"></span>
+      <span class="nm">${it.name}</span>
+      <span class="nu" style="color:${it.color}">${it.val}</span>
       <span class="pc">(${pc}%)</span>
     </div>`;
   }).join("");
@@ -927,30 +949,32 @@ function renderView1(period){
     </div>
   </div>`;
 
-  // Per-unit sectioned cards — แสดง roster + attendance
+  // Per-unit sectioned cards
   const unitSections = units.map(([un,u])=>{
     const caresData = (DEMO.byUnitCares[un]&&DEMO.byUnitCares[un].cares)||{};
     const cares = Object.entries(caresData);
     const maxCC = Math.max(...cares.map(([,c])=>c.members||0), 1);
     const rows = cares.map(([cn,cd])=>{
       const shortName = cn.replace("แคร์ ","");
+      const adults = cd.adults||0;
+      const kids = cd.kids||0;
       return `<div class="dv2-unit-row">
         <span class="nm">${shortName}</span>
-        <div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${Math.round((cd.members||0)/maxCC*100)}%;background:${u.color}"></div></div>
-        <span class="val" style="color:${u.color}">${cd.members||0}</span>
+        <div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${Math.round((adults+kids)/maxCC*100)}%;background:${u.color}"></div></div>
+        <span class="val" style="color:${u.color}">${adults}${kids?'+'+kids:''}</span>
       </div>`;
     }).join("");
     const lightBg = u.color+"1A";
     return `<div class="dv2-unit-section">
       <div class="dv2-unit-head">
         <span class="dv2-unit-name">${un}</span>
-        <span class="dv2-unit-total" style="background:${lightBg};color:${u.color}">สมาชิก ${u.members||0} คน</span>
+        <span class="dv2-unit-total" style="background:${lightBg};color:${u.color}">ผู้ใหญ่ ${u.adults||0} + เด็ก ${u.kids||0} = ${(u.adults||0)+(u.kids||0)} คน</span>
       </div>
       ${rows}
     </div>`;
   }).join("");
   const perUnit = `
-  <div class="dv2-section-title">&#128202; สมาชิกแยกแคร์ (Active roster)</div>
+  <div class="dv2-section-title">&#128202; สมาชิกแยกแคร์ (ผู้ใหญ่+เด็ก)</div>
   ${unitSections}`;
 
   // Activity this week
@@ -1262,7 +1286,7 @@ function drawActBars(){
 
 
 // ================================================================
-// API & AUTH — Church Ratchaburi
+// API & AUTH — Church Ratchaburihttps://
 // ================================================================
 const CHURCH_API = 'https://script.google.com/macros/s/AKfycbyDng7YujwoKGcF4Afj4fPtgAtnKEY_oWZ46wNa-UxCKoagmtIoSmdL0GiCbVOFDwxYaQ/exec';
 
@@ -1303,27 +1327,33 @@ function loTogglePw() {
   pw.type = pw.type==='password'?'text':'password';
 }
 function loDoLogin() {
+  console.log('[login] loSelectedUnit=', loSelectedUnit);
   const errEl = document.getElementById('lo-err');
+  if(!errEl) return;
+  errEl.style.color = '#f87171';
+  errEl.style.display = 'block';
+
   if(!loSelectedUnit) {
-    errEl.textContent = 'กรุณาเลือกหน่วยก่อน';
-    errEl.style.display = 'block';
+    errEl.textContent = '⚠️ กรุณาเลือกหน่วยก่อน';
     return;
   }
-  const pw = document.getElementById('lo-pw').value;
+  const pw = (document.getElementById('lo-pw').value||'').trim();
   if(!pw) {
-    errEl.textContent = 'กรุณากรอกรหัสผ่าน';
-    errEl.style.display = 'block';
+    errEl.textContent = '⚠️ กรุณากรอกรหัสผ่าน';
     return;
   }
   const cred = LO_CREDS[loSelectedUnit];
-  if(!cred || cred.pw !== pw) {
-    errEl.textContent = '❌ รหัสผ่านไม่ถูกต้อง';
-    errEl.style.display = 'block';
-    errEl.style.color = '#f87171';
+  console.log('[login] checking', loSelectedUnit, 'has cred:', !!cred);
+  if(!cred) {
+    errEl.textContent = '❌ ไม่มีหน่วยนี้ในระบบ ('+loSelectedUnit+')';
     return;
   }
-  errEl.textContent = '';
-  errEl.style.display = 'none';
+  if(cred.pw !== pw) {
+    errEl.textContent = '❌ รหัสผ่านไม่ถูกต้อง (ลองพิมพ์อังกฤษ: pro2569, geo2569, senior2569, inst2569, admin2569)';
+    return;
+  }
+  errEl.textContent = '✓ เข้าสู่ระบบสำเร็จ กำลังโหลดข้อมูล...';
+  errEl.style.color = '#4ade80';
   churchSession = {
     username: loSelectedUnit,
     unit: cred.unit,
@@ -1331,10 +1361,19 @@ function loDoLogin() {
     color: cred.color,
     token: btoa(loSelectedUnit + ':' + Date.now())
   };
-  document.getElementById('login-overlay').style.cssText = 'display:none !important;';
-  // บันทึก session ใน localStorage
-  try { localStorage.setItem('church_sess', JSON.stringify(churchSession)); } catch(e){}
-  afterLogin();
+  console.log('[login] session created:', churchSession);
+  try { localStorage.setItem('church_sess', JSON.stringify(churchSession)); } catch(e){ console.warn('save sess failed:',e); }
+  // ซ่อน overlay
+  const overlay = document.getElementById('login-overlay');
+  if(overlay) overlay.style.cssText = 'display:none !important;';
+  // เรียก afterLogin
+  setTimeout(()=>{ 
+    try { afterLogin(); } 
+    catch(e) { 
+      console.error('afterLogin error:', e);
+      apiToast('❌ Error: '+e.message, 'err');
+    } 
+  }, 100);
 }
 function loDoLogout() {
   if(!confirm('ออกจากระบบ?')) return;
@@ -1383,8 +1422,15 @@ async function afterLogin() {
     if(dashEl) dashEl.style.display = 'none';
     // เด้งไปแท็บของตัวเอง
     if(myTab) {
+      // เรียก show() ตรงๆ แทน .click() (ปลอดภัยกว่า)
       const myTabEl = document.getElementById('tab-'+myTab);
-      if(myTabEl) myTabEl.click();
+      const myPg = document.getElementById('pg-'+myTab);
+      if(myTabEl && myPg) {
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+        myPg.classList.add('active');
+        myTabEl.classList.add('active');
+      }
     }
   }
 
@@ -1402,20 +1448,48 @@ async function afterLogin() {
 
 // ===== COMPUTE: ปรับ DEMO ตามจำนวนสมาชิกจริงในชีต =====
 function computeMemberCounts() {
-  if(!churchMembers || !churchMembers.length) return;
   // เคลียร์ counter
-  Object.keys(DEMO.byUnit).forEach(u => { DEMO.byUnit[u].members = 0; });
-  Object.values(DEMO.byUnitCares).forEach(unit => {
-    Object.values(unit.cares).forEach(c => { c.members = 0; });
+  Object.keys(DEMO.byUnit).forEach(u => { 
+    DEMO.byUnit[u].members = 0;
+    DEMO.byUnit[u].adults = 0;
+    DEMO.byUnit[u].interested = 0;  // ผส.
   });
-  churchMembers.forEach(m => {
-    // ข้ามคนที่อยู่ใน inactive
+  Object.values(DEMO.byUnitCares).forEach(unit => {
+    Object.values(unit.cares).forEach(c => { c.members = 0; c.adults = 0; c.interested = 0; });
+  });
+  // นับผู้ใหญ่ (ตัด สถ./ผถ. ออก)
+  (churchMembers||[]).forEach(m => {
     if(['สถ.','ผถ.'].includes(m.status)) return;
-    if(DEMO.byUnit[m.unit]) DEMO.byUnit[m.unit].members++;
+    const isInterested = m.status === 'ผส.';
+    if(DEMO.byUnit[m.unit]) {
+      DEMO.byUnit[m.unit].members++;
+      if(isInterested) DEMO.byUnit[m.unit].interested++;
+      else DEMO.byUnit[m.unit].adults++;
+    }
     if(DEMO.byUnitCares[m.unit] && DEMO.byUnitCares[m.unit].cares[m.care]) {
-      DEMO.byUnitCares[m.unit].cares[m.care].members++;
+      const cc = DEMO.byUnitCares[m.unit].cares[m.care];
+      cc.members++;
+      if(isInterested) cc.interested++; else cc.adults++;
     }
   });
+  // นับเด็ก (จาก KIDS_LOG) — link by care → unit
+  const careToUnit = {};
+  (churchCares||[]).forEach(c => { careToUnit[c.name] = c.unit; });
+  let totalKids = 0;
+  (churchKids||[]).forEach(k => {
+    totalKids++;
+    const u = careToUnit[k.care];
+    if(u && DEMO.byUnit[u]) {
+      DEMO.byUnit[u].kids = (DEMO.byUnit[u].kids||0) + 1;
+    }
+    if(u && DEMO.byUnitCares[u] && DEMO.byUnitCares[u].cares[k.care]) {
+      const cc = DEMO.byUnitCares[u].cares[k.care];
+      cc.kids = (cc.kids||0) + 1;
+    }
+  });
+  DEMO.totalKids = totalKids;
+  // เคลียร์ kids ที่ไม่เคยมีให้เป็น 0
+  Object.values(DEMO.byUnit).forEach(u => { if(typeof u.kids === 'undefined') u.kids = 0; });
 }
 
 // ===== LOAD ALL DATA =====
@@ -1423,7 +1497,7 @@ async function churchLoadAll() {
   showLoading(true);
   apiToast('🔄 กำลังดึงข้อมูลจาก Sheet...','');
   // ใช้ allSettled เพื่อไม่ให้ failure ตัวเดียวหยุดทุกอย่าง
-  const results = await Promise.allSettled([churchLoadCares(), churchLoadMembers()]);
+  const results = await Promise.allSettled([churchLoadCares(), churchLoadMembers(), churchLoadKids()]);
   // เติม dropdown ทุกหน่วยเสมอ (ใช้ fallback ถ้า API ล่ม)
   try { churchFillCareDropdowns(); } catch(e){ console.warn('fillCareDropdowns:',e); }
   const memErr = results[1].status==='rejected' || !churchMembers || !churchMembers.length;
@@ -1448,7 +1522,7 @@ async function churchLoadAll() {
 async function churchRefreshDashboard() {
   showLoading(true);
   apiToast('🔄 กำลังดึงข้อมูลล่าสุดจากชีต...','');
-  await Promise.allSettled([churchLoadWeekly(), churchLoadNewPeople(), churchLoadMembers()]);
+  await Promise.allSettled([churchLoadWeekly(), churchLoadNewPeople(), churchLoadMembers(), churchLoadKids()]);
   computeMemberCounts();
   aggregateThisWeek();
   if(document.getElementById('dash-content')) renderDash();
@@ -1477,6 +1551,46 @@ async function churchLoadWeekly() {
     if(d.ok) { churchWeeklyRows = d.data||[]; return; }
     churchWeeklyRows = [];
   } catch(e){ churchWeeklyRows = []; }
+}
+
+let churchKids = [];
+
+async function churchLoadKids() {
+  try {
+    const tok = (churchSession&&churchSession.token)||'';
+    const r = await fetch(CHURCH_API+'?action=kids&token='+tok);
+    const d = await r.json();
+    if(d.ok && d.data && d.data.length) { churchKids = d.data; return; }
+    throw new Error('empty');
+  } catch(e){
+    churchKids = [
+{id:"K001",prefix:"ด.ช.",name:"เลโอ จันทเต็ง",nick:"เลโอ",parent:"สิงโต-แพรว",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"K002",prefix:"ด.ช.",name:"อาสลัน จันทเต็ง",nick:"อาส-ลัน",parent:"สิงโต-แพรว",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"K003",prefix:"เด็กชาย",name:"ธนภัทร วารีนิล",nick:"ทานอส",parent:"เนม",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"K004",prefix:"ด.ช.",name:"คุณากร ชัยธัชวาณิชย์",nick:"แมทธิว",parent:"สิบ-แอม",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"K005",prefix:"ด.ญ.",name:"คุณากานต์ ชัยธัชวาณิชย์",nick:"เอสเธอร์",parent:"สิบ-แอม",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"K006",prefix:"ด.ช.",name:"วิริยะ มะลิคง",nick:"เกล้า",parent:"กาเหว่า-เกด",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"K007",prefix:"ด.ช.",name:"ศิวกร มะลิคง",nick:"ลีวาย",parent:"กาเหว่า-เกด",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"K008",prefix:"ด.ญ.",name:"วนัชพร เชยชมวงศ์",nick:"ลาฟเทล",parent:"พงษ์-เดียร์",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"K009",prefix:"เด็กหญิง",name:"ชลธิชา กลิ่นมาก",nick:"เนย",parent:"นิด",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"K010",prefix:"เด็กชาย",name:"กันต์พงศ์ หนูอินทร์",nick:"เก้า",parent:"กอล์ฟ-รูธ",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"K011",prefix:"เด็กหญิง",name:"ดารินทร์ แก่นจันทร์",nick:"ไอริ",parent:"ขวัญ",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"K012",prefix:"เด็กชาย",name:"เมฆินทร์ คำจันทร์",nick:"ฟอร์ด",parent:"โบว์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.บ้านโป่ง"},
+{id:"K013",prefix:"เด็กหญิง",name:"นีรชา หาโอกาส",nick:"นิชา",parent:"ยุท-ดาว",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"K014",prefix:"เด็กชาย",name:"พีรัชชัย บุญทอง",nick:"กล้า",parent:"คาวี-ลิลลี่",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"K015",prefix:"เด็กชาย",name:"วีรภัทร หาโอกาส",nick:"ซัน",parent:"โอดี-แป้ง",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"K016",prefix:"เด็กชาย",name:"สมหวัง แจ้งเจริญ",nick:"เบล",parent:"ยุท-ดาว",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"K017",prefix:"เด็กหญิง",name:"ศิริรัตน์ โดโคว์",nick:"โม",parent:"แอ้นา-ดาว",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"K018",prefix:"เด็กหญิง",name:"เกวลิน",nick:"ชมพู",parent:"ใจวา-หลิง",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"K019",prefix:"เด็กหญิง",name:"อิสราพร บุญทอง",nick:"เกรช",parent:"คาวี-ลิลลี่",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"K020",prefix:"เด็กชาย",name:"พันธกร จิ้งโก่ง",nick:"มานา",parent:"เจ้อ-นี",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"K021",prefix:"เด็กหญิง",name:"สาธิตา แซ่ซี",nick:"การ์ตูน",parent:"เปรม",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"K022",prefix:"เด็กหญิง",name:"ชญาดา สิริสวัสดิ์",nick:"เอสเทอร์",parent:"ต้าร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"K023",prefix:"เด็กชาย",name:"(ไม่ทราบชื่อ)",nick:"น้องชายชมพู่",parent:"",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"K024",prefix:"เด็กหญิง",name:"(ไม่ทราบชื่อ)",nick:"ลูกแน่นอน",parent:"แน่นอน",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"K025",prefix:"เด็กชาย",name:"วรภพ แดนสว่าง",nick:"ต้นกล้า",parent:"แม่จี้",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"}
+];
+  }
 }
 
 async function churchLoadNewPeople() {
@@ -1845,6 +1959,13 @@ function churchRenderMembersToChecklist() {
 
 // ===== เมื่อเลือกแคร์ในหน้า unit → โหลดรายชื่อสมาชิก =====
 // ฟิลด์ในตาราง: dawn, church, lunch, ppch, david, careAtt, yy, one1, prok, offering
+// ลำดับสถานะฝ่ายวิญญาณ: หนน. → หนค. → พล. → สช. → ผช. → คจ.เด็ก → อื่นๆ
+const STATUS_ORDER = ['หนน.','หนค.','พล.','สช.','ผช.','คจ.เด็ก'];
+function statusRank(s){
+  const i = STATUS_ORDER.indexOf(s);
+  return i<0 ? 99 : i;
+}
+
 function churchOnCareChange(sel, unitId) {
   const care = sel.value;
   if(!care) return;
@@ -1854,47 +1975,21 @@ function churchOnCareChange(sel, unitId) {
   const tbody = page.querySelector('tbody');
   if(!tbody) return;
 
-  // จดจำว่ากำลังแสดงแคร์ไหน (ใช้ตอนกดบันทึก)
   page.dataset.currentCare = care;
   page.dataset.currentUnit = (churchSession && churchSession.unit) || '';
 
-  const members = churchMembers.filter(m =>
-    m.care === care && !['สถ.','ผถ.'].includes(m.status)
-  );
+  // แยกสมาชิกในแคร์: ผู้ใหญ่ (ไม่ใช่ ผส., สถ., ผถ.) vs ผู้สนใจ ผส.
+  const inCare = (churchMembers||[]).filter(m => m.care === care && !['สถ.','ผถ.'].includes(m.status));
+  const adults = inCare.filter(m => m.status !== 'ผส.');
+  const interested = inCare.filter(m => m.status === 'ผส.');
+  // เรียงตามลำดับสถานะ
+  adults.sort((a,b)=> statusRank(a.status) - statusRank(b.status));
 
-  if(members.length === 0) {
+  if(adults.length === 0) {
     tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:16px;color:#999">ไม่พบสมาชิกในแคร์นี้</td></tr>';
-    ensureSaveButton(page, unitId);
-    return;
+  } else {
+    tbody.innerHTML = adults.map((m,i)=>renderMemberRow(m,i)).join('');
   }
-
-  const STATUS_COLOR = {
-    'หนน.':'#1565C0','หนค.':'#1976D2','พล.':'#2E7D32',
-    'สช.':'#E65100','ผช.':'#BF360C','คจ.เด็ก':'#00695C','ผส.':'#6A1B9A'
-  };
-
-  // 6 checkboxes: dawn, church, lunch, ppch, david, careAtt
-  // 4 numbers: yy, one1, prok, offering
-  const checkFields = ['dawn','church','lunch','ppch','david','careAtt'];
-  const numFields = ['yy','one1','prok','offering'];
-
-  tbody.innerHTML = members.map((m,i) => {
-    const sc = STATUS_COLOR[m.status]||'#555';
-    const mid = m.id||('R'+i);
-    const cks = checkFields.map(f =>
-      '<td style="text-align:center;padding:4px"><span onclick="toggleCk(this)" data-mid="'+mid+'" data-fld="'+f+'" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:2px solid #DDD;border-radius:4px;cursor:pointer;font-size:12px;transition:all .15s" class="ck-act"></span></td>'
-    ).join('');
-    const nums = numFields.map((f,j) =>
-      '<td style="text-align:center;padding:4px"><input type="number" min="0" value="0" data-mid="'+mid+'" data-fld="'+f+'" style="width:'+(f==='offering'?42:38)+'px;text-align:center;border:1px solid '+(f==='offering'?'#880E4F':'#DDD')+';border-radius:4px;padding:2px;font-size:11px'+(f==='offering'?';color:#880E4F;font-weight:bold':'')+'"></td>'
-    ).join('');
-    return '<tr data-mid="'+mid+'" data-nick="'+(m.nick||'').replace(/"/g,'')+'" data-district="'+(m.district||'')+'" style="background:'+(i%2===0?'#FAFAFA':'#fff')+'">' +
-      '<td style="text-align:center;padding:6px 4px;color:#999;font-size:11px">'+(i+1)+'</td>' +
-      '<td style="padding:6px 8px;font-size:11px">'+(m.prefix||'')+'</td>' +
-      '<td style="padding:6px 8px;font-weight:500">'+(m.name||'')+'</td>' +
-      '<td style="padding:6px 8px;text-align:center">'+(m.nick||'')+'</td>' +
-      '<td style="padding:6px 4px;text-align:center"><span style="background:'+sc+'22;color:'+sc+';padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700">'+(m.status||'')+'</span></td>' +
-      cks + nums + '</tr>';
-  }).join('');
 
   if(!document.getElementById('ck-style')) {
     const style = document.createElement('style');
@@ -1904,6 +1999,127 @@ function churchOnCareChange(sel, unitId) {
   }
 
   ensureSaveButton(page, unitId);
+  // ดึง ผส. เข้า "คนใหม่"
+  renderInterestedToNewPeople(unitId, interested);
+  // เรนเดอร์ตาราง คจ.เด็ก ใต้ตารางผู้ใหญ่
+  renderKidsTable(unitId, care);
+}
+
+const STATUS_COLOR = {
+  'หนน.':'#1565C0','หนค.':'#1976D2','พล.':'#2E7D32',
+  'สช.':'#E65100','ผช.':'#BF360C','คจ.เด็ก':'#00695C','ผส.':'#6A1B9A'
+};
+
+function renderMemberRow(m, i) {
+  const sc = STATUS_COLOR[m.status]||'#555';
+  const mid = m.id||('R'+i);
+  const checkFields = ['dawn','church','lunch','ppch','david','careAtt'];
+  const numFields = ['yy','one1','prok','offering'];
+  const cks = checkFields.map(f =>
+    '<td style="text-align:center;padding:4px"><span onclick="toggleCk(this)" data-mid="'+mid+'" data-fld="'+f+'" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:2px solid #DDD;border-radius:4px;cursor:pointer;font-size:12px;transition:all .15s" class="ck-act"></span></td>'
+  ).join('');
+  const nums = numFields.map((f)=>
+    '<td style="text-align:center;padding:4px"><input type="number" min="0" value="0" data-mid="'+mid+'" data-fld="'+f+'" style="width:'+(f==='offering'?42:38)+'px;text-align:center;border:1px solid '+(f==='offering'?'#880E4F':'#DDD')+';border-radius:4px;padding:2px;font-size:11px'+(f==='offering'?';color:#880E4F;font-weight:bold':'')+'"></td>'
+  ).join('');
+  return '<tr data-mid="'+mid+'" data-nick="'+(m.nick||'').replace(/"/g,'')+'" data-district="'+(m.district||'')+'" style="background:'+(i%2===0?'#FAFAFA':'#fff')+'">' +
+    '<td style="text-align:center;padding:6px 4px;color:#999;font-size:11px">'+(i+1)+'</td>' +
+    '<td style="padding:6px 8px;font-size:11px">'+(m.prefix||'')+'</td>' +
+    '<td style="padding:6px 8px;font-weight:500">'+(m.name||'')+'</td>' +
+    '<td style="padding:6px 8px;text-align:center">'+(m.nick||'')+'</td>' +
+    '<td style="padding:6px 4px;text-align:center"><span style="background:'+sc+'22;color:'+sc+';padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700">'+(m.status||'')+'</span></td>' +
+    cks + nums + '</tr>';
+}
+
+// แสดง ผส. ในตาราง "คนใหม่สัปดาห์นี้" ของหน่วยนั้น
+function renderInterestedToNewPeople(unitId, interested) {
+  const tbodyMap = {'pro':'pnm','geo':'gnm','senior':'snm','inst':'inm'};
+  const tbody = document.getElementById(tbodyMap[unitId]);
+  if(!tbody) return;
+  // ลบเฉพาะ row ที่เป็น ผส. จากชีต (ขึ้นต้นด้วย "ps-")
+  Array.from(tbody.querySelectorAll('tr[id^="ps-"]')).forEach(tr=>tr.remove());
+  // เอา error row ออก
+  const er = tbody.querySelector('.er');
+  if(er) er.remove();
+
+  if(interested.length===0) {
+    if(tbody.children.length===0) {
+      tbody.innerHTML = '<tr class="er"><td colspan="5">ยังไม่มีคนใหม่</td></tr>';
+    }
+    return;
+  }
+
+  interested.forEach(m=>{
+    const tr = document.createElement('tr');
+    tr.id = 'ps-'+m.id;
+    tr.style.background = '#FFF8E1';
+    tr.innerHTML =
+      '<td style="padding:6px 8px"><strong>'+(m.prefix||'')+' '+(m.name||'')+'</strong>'+(m.nick?' <span style="color:#888">('+m.nick+')</span>':'')+'</td>' +
+      '<td style="padding:6px 8px"><span style="background:#6A1B9A22;color:#6A1B9A;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">ผส. ผู้สนใจ</span></td>' +
+      '<td style="padding:6px 8px;font-size:11px">'+(m.care||'')+'</td>' +
+      '<td style="padding:6px 8px;font-size:11px;color:#888">รอเปลี่ยนสถานะ → "รับเชื่อ"</td>' +
+      '<td style="text-align:center;color:#999;font-size:11px">—</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+// สร้างตาราง คจ.เด็ก ใต้ตารางผู้ใหญ่ ของหน่วย
+function renderKidsTable(unitId, care) {
+  const page = document.getElementById('pg-'+unitId);
+  if(!page) return;
+  // ลบของเดิม
+  const existing = page.querySelector('.kids-section');
+  if(existing) existing.remove();
+
+  const kidsInCare = (churchKids||[]).filter(k => k.care === care);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'kids-section';
+  wrap.style.cssText = 'margin-top:16px;background:#fff;border-radius:10px;border:1.5px solid #B2DFDB;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.05);';
+  let html =
+    '<div style="background:linear-gradient(135deg,#00695C,#00897B);color:#fff;padding:10px 14px;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:space-between">' +
+      '<span>👧 คจ.เด็ก (' + care + ')</span>' +
+      '<span style="background:rgba(255,255,255,.2);padding:3px 10px;border-radius:12px;font-size:11px">' + kidsInCare.length + ' คน</span>' +
+    '</div>';
+  if(kidsInCare.length===0) {
+    html += '<div style="padding:14px;text-align:center;color:#999;font-size:12px">ยังไม่มีเด็กในแคร์นี้</div>';
+  } else {
+    html += '<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="background:#E0F2F1">' +
+      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;width:28px">#</th>' +
+      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;text-align:left">ชื่อ-นามสกุล</th>' +
+      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700">ชื่อเล่น</th>' +
+      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;text-align:left">ผู้ปกครอง</th>' +
+      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;background:#E65100;color:#fff">รุ่งอรุณ</th>' +
+      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;background:#BF360C;color:#fff">รอบหลัก</th>' +
+      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;background:#2E7D32;color:#fff">แคร์</th>' +
+      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;background:#004D40;color:#fff">อาหาร</th>' +
+      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;background:#827717;color:#fff">พพช.</th>' +
+      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;background:#880E4F;color:#fff">ถวาย</th>' +
+    '</tr></thead><tbody>';
+    kidsInCare.forEach((k,i)=>{
+      const kCheckFields = ['dawn','church','careAtt','lunch','ppch'];
+      const cks = kCheckFields.map(f=>
+        '<td style="text-align:center;padding:4px"><span onclick="toggleCk(this)" data-mid="'+k.id+'" data-fld="'+f+'" data-kid="1" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:2px solid #DDD;border-radius:4px;cursor:pointer;font-size:11px" class="ck-act"></span></td>'
+      ).join('');
+      html += '<tr data-mid="'+k.id+'" data-kid="1" data-nick="'+(k.nick||'')+'" data-district="'+(k.district||'')+'" style="background:'+(i%2===0?'#FAFAFA':'#fff')+';border-bottom:1px solid #F0F0F0">' +
+        '<td style="text-align:center;padding:6px 4px;color:#999;font-size:11px">'+(i+1)+'</td>' +
+        '<td style="padding:6px 8px;font-weight:500">'+(k.prefix||'')+' '+(k.name||'')+'</td>' +
+        '<td style="text-align:center;padding:6px 8px">'+(k.nick||'')+'</td>' +
+        '<td style="padding:6px 8px;font-size:11px;color:#666">'+(k.parent||'')+'</td>' +
+        cks +
+        '<td style="text-align:center;padding:4px"><input type="number" min="0" value="0" data-mid="'+k.id+'" data-fld="offering" data-kid="1" style="width:42px;text-align:center;border:1px solid #880E4F;border-radius:4px;padding:2px;font-size:11px;color:#880E4F;font-weight:bold"></td>' +
+      '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+  wrap.innerHTML = html;
+  // วางใต้ตารางผู้ใหญ่ (.tw หรือ .save-weekly-wrap)
+  const saveWrap = page.querySelector('.save-weekly-wrap');
+  const after = saveWrap || page.querySelector('.tw');
+  if(after && after.parentNode) {
+    after.parentNode.insertBefore(wrap, after.nextSibling);
+  } else {
+    page.appendChild(wrap);
+  }
 }
 
 // ใส่ปุ่ม "บันทึกเข้า Weekly Log" ใต้ตาราง (เฉพาะหน้าที่ยังไม่มี)
