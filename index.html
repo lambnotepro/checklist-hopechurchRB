@@ -1708,28 +1708,43 @@ function aggregateForWeek(wkStr) {
 }
 
 async function churchLoadCares() {
+  const FALLBACK_CARES = [
+    {id:'C01',name:'แคร์ Pro เมือง',unit:'หน่วย Pro',district:'อ.เมือง'},
+    {id:'C02',name:'แคร์ Pro โพธาราม',unit:'หน่วย Pro',district:'อ.โพธาราม'},
+    {id:'C03',name:'แคร์ ภูมิศาสตร์ เมือง',unit:'หน่วยภูมิศาสตร์',district:'อ.เมือง'},
+    {id:'C04',name:'แคร์ ภูมิศาสตร์ บ้านสิงห์',unit:'หน่วยภูมิศาสตร์',district:'อ.โพธาราม'},
+    {id:'C05',name:'แคร์ ซีเนียร์ เมือง',unit:'หน่วยซีเนียร์',district:'อ.เมือง'},
+    {id:'C06',name:'แคร์ ซีเนียร์ บ้านโป่ง',unit:'หน่วยซีเนียร์',district:'อ.บ้านโป่ง'},
+    {id:'C07',name:'แคร์ สถาบัน เมือง',unit:'หน่วยสถาบัน',district:'อ.เมือง'},
+    {id:'C08',name:'แคร์ สถาบัน จอมบึง',unit:'หน่วยสถาบัน',district:'อ.จอมบึง'},
+    {id:'C09',name:'แคร์ สถาบัน โพธาราม',unit:'หน่วยสถาบัน',district:'อ.โพธาราม'},
+    {id:'C10',name:'คจ.เด็ก',unit:'ทุกหน่วย',district:'ทุกอำเภอ'},
+  ];
+  let apiOk = false;
   try {
-    const r = await fetch(CHURCH_API+'?action=cares', {mode:'cors'});
-    const d = await r.json();
-    if(d.ok) {
+    const r = await fetch(CHURCH_API+'?action=cares');
+    const text = await r.text();
+    console.log('[loadCares] HTTP', r.status, '| body:', text.substring(0,200));
+    const d = JSON.parse(text);
+    if(d.ok && d.data && d.data.length) {
       churchCares = d.data;
-      if(churchSession.unit!=='all') churchCares=churchCares.filter(c=>c.unit===churchSession.unit);
+      apiOk = true;
+      console.log('[loadCares] API returned', churchCares.length, 'cares');
+    } else {
+      console.warn('[loadCares] API returned empty/error:', d);
     }
   } catch(e) {
-    // fallback
-    churchCares=[
-      {id:'C01',name:'แคร์ Pro เมือง',unit:'หน่วย Pro',district:'อ.เมือง'},
-      {id:'C02',name:'แคร์ Pro โพธาราม',unit:'หน่วย Pro',district:'อ.โพธาราม'},
-      {id:'C03',name:'แคร์ ภูมิศาสตร์ เมือง',unit:'หน่วยภูมิศาสตร์',district:'อ.เมือง'},
-      {id:'C04',name:'แคร์ ภูมิศาสตร์ บ้านสิงห์',unit:'หน่วยภูมิศาสตร์',district:'อ.โพธาราม'},
-      {id:'C05',name:'แคร์ ซีเนียร์ เมือง',unit:'หน่วยซีเนียร์',district:'อ.เมือง'},
-      {id:'C06',name:'แคร์ ซีเนียร์ บ้านโป่ง',unit:'หน่วยซีเนียร์',district:'อ.บ้านโป่ง'},
-      {id:'C07',name:'แคร์ สถาบัน เมือง',unit:'หน่วยสถาบัน',district:'อ.เมือง'},
-      {id:'C08',name:'แคร์ สถาบัน จอมบึง',unit:'หน่วยสถาบัน',district:'อ.จอมบึง'},
-      {id:'C09',name:'แคร์ สถาบัน โพธาราม',unit:'หน่วยสถาบัน',district:'อ.โพธาราม'},
-      {id:'C10',name:'คจ.เด็ก',unit:'ทุกหน่วย',district:'ทุกอำเภอ'},
-    ];
-    if(churchSession.unit!=='all') churchCares=churchCares.filter(c=>c.unit===churchSession.unit);
+    console.warn('[loadCares] fetch failed:', e.message);
+  }
+  // ใช้ fallback ถ้า API ไม่ตอบ หรือ ตอบมาว่าง
+  if(!apiOk) {
+    churchCares = FALLBACK_CARES.slice();
+    console.log('[loadCares] Using fallback', churchCares.length, 'cares');
+  }
+  // กรองตาม unit ของ session (ไม่ใช่ admin)
+  if(churchSession.unit!=='all') {
+    churchCares = churchCares.filter(c => c.unit === churchSession.unit);
+    console.log('[loadCares] After filter for', churchSession.unit+':', churchCares.length, 'cares');
   }
 }
 
