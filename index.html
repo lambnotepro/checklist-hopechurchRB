@@ -587,6 +587,7 @@ tbody td.L{text-align:left;padding-left:10px;}
   </div>
 
   <div style="text-align:right;margin-bottom:10px">
+    <button onclick="churchTestAPI()" style="background:#607D8B;color:#fff;padding:8px 14px;font-size:12px;border:none;border-radius:8px;cursor:pointer;font-weight:700;margin-right:6px">🔍 ทดสอบ API</button>
     <button onclick="churchRefreshDashboard()" style="background:#1565C0;color:#fff;padding:8px 18px;font-size:12px;border:none;border-radius:8px;cursor:pointer;font-weight:700;box-shadow:0 2px 4px rgba(21,101,192,.3)">🔄 ดึงข้อมูลล่าสุดจาก Sheet</button>
   </div>
   <!-- Dynamic content -->
@@ -1779,7 +1780,7 @@ async function churchLoadMembers() {
 {id:"M035",prefix:"ด.ช.",name:"เลโอ จันทเต็ง",nick:"เลโอ",status:"คจ.เด็ก",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
 {id:"M036",prefix:"ด.ช.",name:"อาสลัน จันทเต็ง",nick:"อาส-ลัน",status:"คจ.เด็ก",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
 {id:"M177",prefix:"นางสาว",name:"ธนันพัชร บัวเย็น",nick:"แม่ปู",status:"ผช.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
-{id:"M037",prefix:"นาย",name:"ณัฐวุฒิ มีแสง",nick:"แมนยู",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Startup Pro",district:"อ.เมือง"},
+{id:"M037",prefix:"นาย",name:"ณัฐวุฒิ มีแสง",nick:"แมนยู",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
 {id:"M038",prefix:"นาย",name:"แอ้   ไม่มีนามสกุล",nick:"แอ้",status:"หนค.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
 {id:"M039",prefix:"น.ส.",name:"แป้ง  ไม่มีนามสกุล",nick:"แป้ง",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
 {id:"M040",prefix:"นาย",name:"เปรมชัย   ซีแซ่",nick:"เปรม",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
@@ -2133,17 +2134,14 @@ function renderKidsTable(unitId, care) {
       '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;text-align:left">ชื่อ-นามสกุล</th>' +
       '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700">ชื่อเล่น</th>' +
       '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;text-align:left">ผู้ปกครอง</th>' +
-      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;background:#E65100;color:#fff">รุ่งอรุณ</th>' +
-      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;background:#BF360C;color:#fff">รอบหลัก</th>' +
-      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;background:#2E7D32;color:#fff">แคร์</th>' +
-      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;background:#004D40;color:#fff">อาหาร</th>' +
-      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;background:#827717;color:#fff">พพช.</th>' +
-      '<th style="padding:8px 6px;color:#004D40;font-size:10px;font-weight:700;background:#880E4F;color:#fff">ถวาย</th>' +
+      '<th style="padding:8px 6px;font-size:10px;font-weight:700;background:#BF360C;color:#fff">รอบหลัก<br>(คจ.เด็ก)</th>' +
+      '<th style="padding:8px 6px;font-size:10px;font-weight:700;background:#2E7D32;color:#fff">แคร์</th>' +
+      '<th style="padding:8px 6px;font-size:10px;font-weight:700;background:#880E4F;color:#fff">ถวาย</th>' +
     '</tr></thead><tbody>';
     kidsInCare.forEach((k,i)=>{
-      const kCheckFields = ['dawn','church','careAtt','lunch','ppch'];
+      const kCheckFields = ['church','careAtt'];  // เหลือแค่ รอบหลัก + แคร์
       const cks = kCheckFields.map(f=>
-        '<td style="text-align:center;padding:4px"><span onclick="toggleCk(this)" data-mid="'+k.id+'" data-fld="'+f+'" data-kid="1" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:2px solid #DDD;border-radius:4px;cursor:pointer;font-size:11px" class="ck-act"></span></td>'
+        '<td style="text-align:center;padding:4px"><span onclick="toggleCk(this)" data-mid="'+k.id+'" data-fld="'+f+'" data-kid="1" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:2px solid #DDD;border-radius:4px;cursor:pointer;font-size:12px" class="ck-act"></span></td>'
       ).join('');
       html += '<tr data-mid="'+k.id+'" data-kid="1" data-nick="'+(k.nick||'')+'" data-district="'+(k.district||'')+'" style="background:'+(i%2===0?'#FAFAFA':'#fff')+';border-bottom:1px solid #F0F0F0">' +
         '<td style="text-align:center;padding:6px 4px;color:#999;font-size:11px">'+(i+1)+'</td>' +
@@ -2286,20 +2284,70 @@ async function churchSaveWeekly(unitId) {
   if(!confirm('ยืนยันบันทึกเข้า Weekly Log?\n\nสัปดาห์: '+dateStr+'\nแคร์: '+care+'\nผู้ใหญ่: '+adultCount+' แถว\nเด็ก (คจ.เด็ก): '+kidCount+' แถว\nรวม: '+rows.length+' แถว')) return;
 
   showLoading(true);
+  // Helper: encode payload เพื่อหลีกเลี่ยง CORS preflight (Apps Script รับได้ใน e.postData.contents)
+  const payload = JSON.stringify({action:'saveWeekly', token:(churchSession&&churchSession.token)||'', rows});
+  console.log('[saveWeekly] POST payload size:', payload.length, 'bytes', '| rows:', rows.length);
+  console.log('[saveWeekly] URL:', CHURCH_API);
+  console.log('[saveWeekly] First row:', rows[0]);
   try {
+    // ใช้ "simple request": text/plain เพื่อข้าม CORS preflight
     const r = await fetch(CHURCH_API, {
       method:'POST',
+      mode:'cors',
+      redirect:'follow',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({action:'saveWeekly', token:(churchSession&&churchSession.token)||'', rows})
+      body: payload
     });
-    const d = await r.json();
+    console.log('[saveWeekly] HTTP', r.status, r.statusText);
+    if(!r.ok) throw new Error('HTTP ' + r.status + ' ' + r.statusText);
+    const text = await r.text();
+    console.log('[saveWeekly] Response body:', text.substring(0, 500));
+    let d;
+    try { d = JSON.parse(text); } catch(je) { throw new Error('Server ตอบไม่ใช่ JSON: ' + text.substring(0,150)); }
     if(d.ok) apiToast('✅ บันทึก '+d.saved+' แถวเข้า Sheet สำเร็จ','ok');
     else throw new Error(d.error||'unknown');
   } catch(e) {
-    console.error('saveWeekly:', e);
-    apiToast('❌ บันทึกไม่สำเร็จ: '+e.message+' (ดูคอนโซลสำหรับรายละเอียด)','err');
+    console.error('saveWeekly full error:', e);
+    let hint = '';
+    if((e.message||'').match(/Load failed|Failed to fetch|NetworkError|fetch/i)) {
+      hint = ' — ปัญหา network/CORS';
+      // ลองยิงแบบ no-cors เป็น fallback (request ผ่านไปแต่อ่าน response ไม่ได้)
+      try {
+        await fetch(CHURCH_API, {
+          method:'POST',
+          mode:'no-cors',
+          headers:{'Content-Type':'text/plain;charset=utf-8'},
+          body: payload
+        });
+        apiToast('⚠️ ส่งข้อมูลแล้วในโหมด no-cors — กรุณาเปิดชีต Weekly_Log ดูว่ามีข้อมูลใหม่หรือไม่ ถ้ามี = สำเร็จ','err');
+        showLoading(false);
+        return;
+      } catch(e2) {
+        console.error('no-cors fallback also failed:', e2);
+      }
+    }
+    apiToast('❌ บันทึกไม่สำเร็จ: '+e.message+hint+' (ดูคอนโซล F12 สำหรับรายละเอียด)','err');
   }
   showLoading(false);
+}
+
+// ===== ทดสอบ API — กดปุ่มนี้เพื่อเช็คว่าเชื่อมต่อ Apps Script ได้หรือไม่ =====
+async function churchTestAPI() {
+  apiToast('🔍 กำลังทดสอบ API...','');
+  console.log('[testAPI] URL:', CHURCH_API);
+  try {
+    const r = await fetch(CHURCH_API+'?action=cares');
+    console.log('[testAPI] HTTP', r.status, r.statusText);
+    const text = await r.text();
+    console.log('[testAPI] Body:', text.substring(0,300));
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const d = JSON.parse(text);
+    if(d.ok) apiToast('✅ API ทำงานปกติ ('+d.data.length+' cares)','ok');
+    else throw new Error(d.error||'unknown');
+  } catch(e) {
+    console.error('[testAPI] failed:', e);
+    apiToast('❌ API ใช้ไม่ได้: '+e.message+' → ดู F12 Console + ตรวจ Deploy URL','err');
+  }
 }
 
 // ===== HELPERS =====
