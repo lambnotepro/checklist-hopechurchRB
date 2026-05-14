@@ -32,7 +32,7 @@ select:focus{outline:none;border-color:#1565C0;}
 .tt{padding:10px 14px;font-size:12px;font-weight:700;color:#fff;}
 table{width:100%;border-collapse:collapse;font-size:12px;}
 .r1 th{padding:7px 4px;color:#fff;font-size:10px;font-weight:700;text-align:center;border-right:1px solid rgba(255,255,255,.15);}
-.r1 th.L{text-align:left;padding-left:10px;}
+.r1 th.L{text-align:center;padding-left:4px;}
 .r2 th{padding:6px 3px;color:#fff;font-size:9px;font-weight:700;text-align:center;line-height:1.3;border-right:1px solid rgba(255,255,255,.2);min-width:46px;}
 .ga{background:#1B5E20!important;}.gc{background:#0D47A1!important;}
 .gd{background:#4A148C!important;}.go{background:#880E4F!important;}
@@ -45,7 +45,7 @@ tbody tr{border-bottom:1px solid #F0F0F0;}
 tbody tr:last-child{border-bottom:none;}
 tbody tr:hover{background:#F8F9FF!important;}
 tbody td{padding:6px 3px;text-align:center;border-right:1px solid #F0F0F0;}
-tbody td.L{text-align:left;padding-left:10px;}
+tbody td.L{text-align:center;padding-left:4px;}
 .nl{font-size:11px;color:var(--sub);font-weight:600;}
 .cb{width:17px;height:17px;border:2px solid #BDBDBD;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:10px;color:#fff;user-select:none;}
 .cb:hover{border-color:#888;}.cb.on{background:#43A047;border-color:#43A047;}
@@ -62,7 +62,8 @@ tbody td.L{text-align:left;padding-left:10px;}
 .ab{background:#FFD600;color:#004D40;border:none;border-radius:7px;padding:5px 13px;font-family:"Sarabun",sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
 .ab:hover{opacity:.85;}
 .nmt{width:100%;border-collapse:collapse;font-size:12px;}
-.nmt thead th{padding:5px 6px;background:#E0F2F1;color:#004D40;font-weight:700;font-size:10px;text-align:left;border-bottom:2px solid #B2DFDB;}
+.nmt thead th{padding:5px 6px;background:#E0F2F1;color:#004D40;font-weight:700;font-size:10px;text-align:center;border-bottom:2px solid #B2DFDB;}
+.nmt tbody td{text-align:center;}
 .nmt tbody td{padding:5px 6px;vertical-align:middle;}
 .act-mini{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;min-width:200px;}
 .act-mini-row{display:flex;flex-direction:column;align-items:center;gap:2px;}
@@ -128,11 +129,11 @@ tbody td.L{text-align:left;padding-left:10px;}
 .district-row .dr-val{font-size:13px;font-weight:700;color:var(--text);}
 .new-people-table{width:100%;border-collapse:collapse;font-size:12px;}
 .new-people-table thead th{padding:8px 10px;background:#E8F5E9;color:#1B5E20;font-weight:700;font-size:10px;text-align:center;border-bottom:2px solid #A5D6A7;}
-.new-people-table thead th.L{text-align:left;}
+.new-people-table thead th.L{text-align:center;}
 .new-people-table tbody tr{border-bottom:1px solid #F0F0F0;}
 .new-people-table tbody tr:hover{background:#F9FFF9;}
 .new-people-table tbody td{padding:7px 10px;text-align:center;font-size:12px;}
-.new-people-table tbody td.L{text-align:left;}
+.new-people-table tbody td.L{text-align:center;}
 .badge-new{display:inline-block;padding:2px 8px;border-radius:9px;font-size:10px;font-weight:700;}
 .badge-interest{background:#E3F2FD;color:#1565C0;}
 .badge-believe{background:#E8F5E9;color:#2E7D32;}
@@ -141,31 +142,66 @@ tbody td.L{text-align:left;padding-left:10px;}
 
 
 /* ===== API / LOGIN OVERLAY ===== */
-#login-overlay{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,#1a2744 0%,#0D1117 70%);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
-.lo-logo{font-size:52px;margin-bottom:10px;animation:lo-float 3s ease-in-out infinite;}
-@keyframes lo-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.lo-title{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;}
-.lo-sub{font-size:13px;color:#8B949E;margin-bottom:28px;}
-.lo-card{background:#161B22;border:1px solid #30363D;border-radius:16px;padding:26px 22px;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,.5);}
-.lo-section-label{font-size:10px;font-weight:700;color:#8B949E;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;}
-.lo-unit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;}
-.lo-unit-btn{padding:12px 8px;border-radius:8px;border:2px solid #30363D;background:#21262D;color:#E6EDF3;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;text-align:center;}
-.lo-unit-btn:hover{border-color:#FFD700;background:#1c2230;}
-.lo-unit-btn.selected{border-color:#FFD700;background:#1c2a1a;color:#FFD700;}
-.lo-unit-btn.selected.pro{border-color:#1565C0 !important;background:#0d1929 !important;color:#90CAF9 !important;}
-.lo-unit-btn.selected.geo{border-color:#2E7D32 !important;background:#0a1a0a !important;color:#A5D6A7 !important;}
-.lo-unit-btn.selected.senior{border-color:#6A1B9A !important;background:#1a0d29 !important;color:#CE93D8 !important;}
-.lo-unit-btn.selected.inst{border-color:#BF360C !important;background:#290d0d !important;color:#FFAB91 !important;}
-.lo-unit-btn.selected.kids{border-color:#00897B !important;background:#0a1f1d !important;color:#80CBC4 !important;}
-.lo-unit-btn.selected.admin{border-color:#FFD700 !important;background:#1a1a0d !important;color:#FFD700 !important;}
+/* ===== LOGIN OVERLAY V2 — full screen, split design ===== */
+#login-overlay{position:fixed;inset:0;background:#0D1117;z-index:9999;display:none;flex-direction:row;align-items:stretch;justify-content:center;padding:0;overflow:hidden;}
+#login-overlay::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(ellipse 80% 60% at 15% 30%,rgba(21,101,192,.25) 0%,transparent 60%),
+  radial-gradient(ellipse 70% 50% at 85% 70%,rgba(255,165,0,.15) 0%,transparent 60%),
+  linear-gradient(135deg,#0D1117 0%,#161B22 100%);
+  pointer-events:none;}
+
+/* LEFT — Hero/Brand panel */
+.lo-hero{flex:1.2;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:60px 80px;position:relative;z-index:1;}
+.lo-hero-emoji{font-size:80px;margin-bottom:14px;animation:lo-float 3s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(255,165,0,.3));}
+@keyframes lo-float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-10px) rotate(2deg)}}
+.lo-brand-line1{font-size:13px;font-weight:600;color:#FFA726;letter-spacing:6px;text-transform:uppercase;margin-bottom:8px;}
+.lo-brand-title{font-size:62px;font-weight:900;color:#fff;line-height:1.05;letter-spacing:-1px;margin-bottom:0;font-family:'Poppins','Sarabun',sans-serif;background:linear-gradient(135deg,#fff 0%,#FFC1A1 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;}
+.lo-brand-spacer{height:14px;}
+.lo-brand-thai{font-size:18px;font-weight:600;color:#8B949E;letter-spacing:.5px;margin-bottom:28px;}
+.lo-brand-tagline{font-size:14px;color:#586069;max-width:380px;line-height:1.7;border-left:3px solid #FFA726;padding-left:14px;}
+.lo-brand-version{position:absolute;bottom:30px;left:80px;font-size:11px;color:#586069;letter-spacing:1px;}
+
+/* RIGHT — Login form panel */
+.lo-form-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:40px;position:relative;z-index:1;}
+.lo-card{background:rgba(22,27,34,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:36px 32px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.6);}
+.lo-card-title{font-size:22px;font-weight:800;color:#fff;margin-bottom:6px;}
+.lo-card-sub{font-size:13px;color:#8B949E;margin-bottom:24px;}
+.lo-section-label{font-size:11px;font-weight:700;color:#FFA726;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.lo-section-label::before{content:"";display:inline-block;width:14px;height:2px;background:#FFA726;border-radius:2px;}
+.lo-unit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px;}
+.lo-unit-btn{padding:14px 10px;border-radius:12px;border:1.5px solid rgba(255,255,255,.08);background:rgba(33,38,45,.6);color:#E6EDF3;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .25s cubic-bezier(.4,0,.2,1);text-align:center;position:relative;overflow:hidden;}
+.lo-unit-btn:hover{border-color:rgba(255,167,38,.4);background:rgba(33,38,45,.9);transform:translateY(-2px);}
+.lo-unit-btn.selected{border-color:#FFA726;background:rgba(255,167,38,.08);color:#FFA726;box-shadow:0 0 0 3px rgba(255,167,38,.15);}
+.lo-unit-btn.selected.pro{border-color:#42A5F5 !important;background:rgba(66,165,245,.08) !important;color:#90CAF9 !important;box-shadow:0 0 0 3px rgba(66,165,245,.15) !important;}
+.lo-unit-btn.selected.geo{border-color:#66BB6A !important;background:rgba(102,187,106,.08) !important;color:#A5D6A7 !important;box-shadow:0 0 0 3px rgba(102,187,106,.15) !important;}
+.lo-unit-btn.selected.senior{border-color:#AB47BC !important;background:rgba(171,71,188,.08) !important;color:#CE93D8 !important;box-shadow:0 0 0 3px rgba(171,71,188,.15) !important;}
+.lo-unit-btn.selected.inst{border-color:#FF7043 !important;background:rgba(255,112,67,.08) !important;color:#FFAB91 !important;box-shadow:0 0 0 3px rgba(255,112,67,.15) !important;}
+.lo-unit-btn.selected.kids{border-color:#26A69A !important;background:rgba(38,166,154,.08) !important;color:#80CBC4 !important;box-shadow:0 0 0 3px rgba(38,166,154,.15) !important;}
+.lo-unit-btn.selected.admin{border-color:#FFC107 !important;background:rgba(255,193,7,.1) !important;color:#FFD54F !important;box-shadow:0 0 0 3px rgba(255,193,7,.15) !important;}
 .lo-admin-btn{grid-column:1/-1;}
-.lo-pw-wrap{position:relative;margin-bottom:18px;}
-.lo-pw-input{width:100%;padding:11px 40px 11px 13px;border:1.5px solid #30363D;border-radius:8px;background:#21262D;color:#E6EDF3;font-family:inherit;font-size:14px;outline:none;transition:border-color .2s;}
-.lo-pw-input:focus{border-color:#FFD700;}
-.lo-pw-eye{position:absolute;right:11px;top:50%;transform:translateY(-50%);background:none;border:none;color:#8B949E;cursor:pointer;font-size:15px;}
-.lo-btn{width:100%;padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s;}
-.lo-btn:hover{opacity:.9;}
-.lo-err{color:#f87171;font-size:12px;margin-top:7px;text-align:center;min-height:16px;}
+.lo-pw-wrap{position:relative;margin-bottom:20px;}
+.lo-pw-input{width:100%;padding:14px 44px 14px 16px;border:1.5px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(33,38,45,.6);color:#E6EDF3;font-family:inherit;font-size:14px;outline:none;transition:all .25s;}
+.lo-pw-input::placeholder{color:#586069;}
+.lo-pw-input:focus{border-color:#FFA726;background:rgba(33,38,45,.9);box-shadow:0 0 0 3px rgba(255,167,38,.12);}
+.lo-pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#8B949E;cursor:pointer;font-size:16px;padding:4px 8px;}
+.lo-pw-eye:hover{color:#FFA726;}
+.lo-btn{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#1565C0 0%,#0277BD 100%);color:#fff;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:all .25s;letter-spacing:.5px;box-shadow:0 4px 16px rgba(21,101,192,.4);}
+.lo-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(21,101,192,.55);}
+.lo-btn:active{transform:translateY(0);}
+.lo-err{color:#f87171;font-size:12px;margin-top:12px;text-align:center;min-height:16px;}
+
+/* ===== Responsive — single column on mobile/tablet ===== */
+@media(max-width:900px){
+  #login-overlay{flex-direction:column;overflow-y:auto;padding:0;}
+  .lo-hero{flex:none;padding:36px 28px 12px;align-items:center;text-align:center;}
+  .lo-hero-emoji{font-size:60px;}
+  .lo-brand-title{font-size:38px;letter-spacing:0;}
+  .lo-brand-thai{font-size:15px;margin-bottom:14px;}
+  .lo-brand-tagline{font-size:12px;border-left:none;padding-left:0;text-align:center;}
+  .lo-brand-version{position:static;text-align:center;margin-top:14px;}
+  .lo-form-wrap{padding:20px 16px 30px;}
+  .lo-card{padding:24px 20px;}
+}
 /* Loading overlay */
 #loading-bar{position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#1565C0,#FFD700,#2E7D32);z-index:9998;animation:lb .8s ease-in-out infinite alternate;display:none;}
 @keyframes lb{from{opacity:.4}to{opacity:1}}
@@ -247,29 +283,49 @@ tbody td.L{text-align:left;padding-left:10px;}
 </head>
 <body>
 
-<!-- LOGIN OVERLAY -->
+<!-- LOGIN OVERLAY V2 — Full-screen split layout -->
 <div id="login-overlay" style="display:none">
-  <div class="lo-logo">⛪</div>
-  <div class="lo-title">คริสตจักรราชบุรี</div>
-  <div class="lo-sub">ระบบติดตามสมาชิกและกิจกรรม</div>
-  <div class="lo-card">
-    <div class="lo-section-label">เลือกหน่วย</div>
-    <div class="lo-unit-grid">
-      <button class="lo-unit-btn pro" data-u="โปร" data-color="#1565C0" data-bg="#0d1929" data-fgcolor="#90CAF9" onclick="loSelectUnit(this)">🏠 หน่วย Pro</button>
-      <button class="lo-unit-btn geo" data-u="ภูมิศาสตร์" data-color="#2E7D32" data-bg="#0a1a0a" data-fgcolor="#A5D6A7" onclick="loSelectUnit(this)">🏠 ภูมิศาสตร์</button>
-      <button class="lo-unit-btn senior" data-u="ซีเนียร์" data-color="#6A1B9A" data-bg="#1a0d29" data-fgcolor="#CE93D8" onclick="loSelectUnit(this)">🏠 Senior</button>
-      <button class="lo-unit-btn inst" data-u="สถาบัน" data-color="#BF360C" data-bg="#290d0d" data-fgcolor="#FFAB91" onclick="loSelectUnit(this)">🏠 สถาบัน</button>
-      <button class="lo-unit-btn kids" data-u="ครูรวี" data-color="#00897B" data-bg="#0a1f1d" data-fgcolor="#80CBC4" onclick="loSelectUnit(this)">👧 ครูรวี (คจ.เด็ก)</button>
-      <button class="lo-unit-btn admin lo-admin-btn" data-u="Admin" data-color="#FFD700" data-bg="#1a1a0d" data-fgcolor="#FFD700" onclick="loSelectUnit(this)">⚙️ Admin</button>
+
+  <!-- LEFT: Brand panel -->
+  <div class="lo-hero">
+    <div class="lo-hero-emoji">⛪</div>
+    <div class="lo-brand-line1">RATCHABURI · 2569</div>
+    <h1 class="lo-brand-title">Hope&nbsp;Academy<br>Ratchaburi</h1>
+    <div class="lo-brand-spacer"></div>
+    <div class="lo-brand-thai">คริสตจักรความหวังราชบุรี &middot; ระบบติดตามสมาชิกและกิจกรรม</div>
+    <div class="lo-brand-tagline">
+      "&nbsp;จงนำคนทั้งปวงมาเป็นสาวกของเรา&nbsp;" &nbsp;— มัทธิว 28:19
     </div>
-    <div class="lo-section-label">รหัสผ่าน</div>
-    <div class="lo-pw-wrap">
-      <input id="lo-pw" type="password" class="lo-pw-input" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter')loDoLogin()">
-      <button class="lo-pw-eye" onclick="loTogglePw()">👁</button>
-    </div>
-    <button class="lo-btn" onclick="loDoLogin()">เข้าสู่ระบบ</button>
-    <div class="lo-err" id="lo-err"></div>
+    <div class="lo-brand-version">v2.0 &middot; ระบบหลังบ้านเชื่อมต่อ Google Sheet</div>
   </div>
+
+  <!-- RIGHT: Login form -->
+  <div class="lo-form-wrap">
+    <div class="lo-card">
+      <div class="lo-card-title">ยินดีต้อนรับ 👋</div>
+      <div class="lo-card-sub">เลือกหน่วยของคุณและกรอกรหัสผ่าน</div>
+
+      <div class="lo-section-label">เลือกหน่วย</div>
+      <div class="lo-unit-grid">
+        <button class="lo-unit-btn pro" data-u="โปร" data-color="#42A5F5" data-bg="rgba(66,165,245,.08)" data-fgcolor="#90CAF9" onclick="loSelectUnit(this)">🏠 หน่วย Pro</button>
+        <button class="lo-unit-btn geo" data-u="ภูมิศาสตร์" data-color="#66BB6A" data-bg="rgba(102,187,106,.08)" data-fgcolor="#A5D6A7" onclick="loSelectUnit(this)">🏠 ภูมิศาสตร์</button>
+        <button class="lo-unit-btn senior" data-u="ซีเนียร์" data-color="#AB47BC" data-bg="rgba(171,71,188,.08)" data-fgcolor="#CE93D8" onclick="loSelectUnit(this)">🏠 Senior</button>
+        <button class="lo-unit-btn inst" data-u="สถาบัน" data-color="#FF7043" data-bg="rgba(255,112,67,.08)" data-fgcolor="#FFAB91" onclick="loSelectUnit(this)">🏠 สถาบัน</button>
+        <button class="lo-unit-btn kids" data-u="ครูรวี" data-color="#26A69A" data-bg="rgba(38,166,154,.08)" data-fgcolor="#80CBC4" onclick="loSelectUnit(this)">👧 ครูรวี (คจ.เด็ก)</button>
+        <button class="lo-unit-btn admin lo-admin-btn" data-u="Admin" data-color="#FFC107" data-bg="rgba(255,193,7,.1)" data-fgcolor="#FFD54F" onclick="loSelectUnit(this)">⚙️ Admin</button>
+      </div>
+
+      <div class="lo-section-label">รหัสผ่าน</div>
+      <div class="lo-pw-wrap">
+        <input id="lo-pw" type="password" class="lo-pw-input" placeholder="กรอกรหัสผ่าน" onkeydown="if(event.key==='Enter')loDoLogin()" autocomplete="current-password">
+        <button class="lo-pw-eye" onclick="loTogglePw()">👁</button>
+      </div>
+
+      <button class="lo-btn" onclick="loDoLogin()">เข้าสู่ระบบ →</button>
+      <div class="lo-err" id="lo-err"></div>
+    </div>
+  </div>
+
 </div>
 <div id="loading-bar"></div>
 <div class="toast-api" id="toast-api"></div>
@@ -2116,10 +2172,10 @@ function renderMemberRow(m, i) {
   ).join('');
   return '<tr data-mid="'+mid+'" data-nick="'+(m.nick||'').replace(/"/g,'')+'" data-district="'+(m.district||'')+'" style="background:'+(i%2===0?'#FAFAFA':'#fff')+'">' +
     '<td style="text-align:center;padding:6px 4px;color:#999;font-size:11px">'+(i+1)+'</td>' +
-    '<td style="padding:6px 8px;font-size:11px">'+(m.prefix||'')+'</td>' +
-    '<td style="padding:6px 8px;font-weight:500">'+(m.name||'')+'</td>' +
-    '<td style="padding:6px 8px;text-align:center">'+(m.nick||'')+'</td>' +
-    '<td style="padding:6px 4px;text-align:center"><span style="background:'+sc+'22;color:'+sc+';padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700">'+(ns||m.status||'')+'</span></td>' +
+    '<td style="text-align:center;padding:6px 8px;font-size:11px">'+(m.prefix||'')+'</td>' +
+    '<td style="text-align:center;padding:6px 8px;font-weight:500">'+(m.name||'')+'</td>' +
+    '<td style="text-align:center;padding:6px 8px">'+(m.nick||'')+'</td>' +
+    '<td style="text-align:center;padding:6px 4px"><span style="background:'+sc+'22;color:'+sc+';padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700">'+(ns||m.status||'')+'</span></td>' +
     cks + nums + '</tr>';
 }
 
@@ -2468,7 +2524,6 @@ async function churchSaveWeekly(unitId) {
   console.log('[saveWeekly] URL:', CHURCH_API);
   console.log('[saveWeekly] First row:', rows[0]);
   try {
-    // ใช้ "simple request": text/plain เพื่อข้าม CORS preflight
     const r = await fetch(CHURCH_API, {
       method:'POST',
       mode:'cors',
@@ -2489,7 +2544,6 @@ async function churchSaveWeekly(unitId) {
     let hint = '';
     if((e.message||'').match(/Load failed|Failed to fetch|NetworkError|fetch/i)) {
       hint = ' — ปัญหา network/CORS';
-      // ลองยิงแบบ no-cors เป็น fallback (request ผ่านไปแต่อ่าน response ไม่ได้)
       try {
         await fetch(CHURCH_API, {
           method:'POST',
@@ -2509,7 +2563,7 @@ async function churchSaveWeekly(unitId) {
   showLoading(false);
 }
 
-// ===== ทดสอบ API — กดปุ่มนี้เพื่อเช็คว่าเชื่อมต่อ Apps Script ได้หรือไม่ =====
+// ===== ทดสอบ API =====
 async function churchTestAPI() {
   apiToast('🔍 กำลังทดสอบ API...','');
   console.log('[testAPI] URL:', CHURCH_API);
