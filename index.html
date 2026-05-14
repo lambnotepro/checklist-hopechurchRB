@@ -565,7 +565,7 @@ tbody td.L{text-align:left;padding-left:10px;}
     <div class="cg"><label>เลือกสัปดาห์</label>
       <select id="kw"><option>อาทิตย์ที่ 04/05/2568</option></select></div>
     <div class="cg" style="margin-left:auto;align-self:flex-end">
-      <button onclick="renderKidsUnitPage()" style="background:#00897B;color:#fff;padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:12px">🔄 โหลดรายชื่อเด็ก</button>
+      <button onclick="reloadKidsPage()" style="background:#00897B;color:#fff;padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:12px">🔄 โหลดรายชื่อเด็ก</button>
     </div>
   </div>
   <div id="kids-unit-content"></div>
@@ -1554,10 +1554,10 @@ async function churchLoadAll() {
   } else {
     apiToast('✅ โหลดข้อมูลสำเร็จ '+churchMembers.length+' คน','ok');
   }
-  // คำนวณยอดสมาชิกจริงเข้า DEMO
-  computeMemberCounts();
+  // คำนวณยอดสมาชิกจริงเข้า DEMO (ใส่ try กันพัง)
+  try { computeMemberCounts(); } catch(e){ console.warn('computeMemberCounts:',e); }
   // ดึง weekly + newpeople real-time แล้ว aggregate
-  try { 
+  try {
     await Promise.allSettled([churchLoadWeekly(), churchLoadNewPeople()]);
     aggregateThisWeek();
   } catch(e){ console.warn('weekly aggregate failed:',e); }
@@ -2010,16 +2010,19 @@ function churchRenderMembersToChecklist() {
     byCare[m.care].push(m);
   });
 
-  // อัปเดต dropdown แคร์ในแต่ละหน้า
+  // อัปเดต dropdown แคร์ในแต่ละหน้า — ใช้ id ตรงๆ กัน querySelector หาผิด
+  const careSelIds = {pro:'pc', geo:'gc', senior:'sc', inst:'ic'};
   Object.entries(unitPageMap).forEach(([unit, pageId]) => {
-    const sel = document.querySelector('#pg-'+pageId+' select');
-    if(!sel) return;
-    const unitCares = churchCares.filter(c => c.unit === unit);
-    if(unitCares.length === 0) return;
+    const selId = careSelIds[pageId];
+    const sel = document.getElementById(selId);
+    if(!sel) { console.warn('[renderMembers] no #'+selId); return; }
+    const unitCares = (churchCares||[]).filter(c => c.unit === unit);
+    console.log('[renderMembers] '+unit+' →', unitCares.length, 'cares');
     const cur = sel.value;
+    // เสมอเขียน placeholder + cares (ถ้าไม่มี cares แสดง placeholder อย่างเดียว)
     sel.innerHTML = '<option value="">-- เลือกแคร์ --</option>' +
       unitCares.map(c => '<option value="'+c.name+'">'+c.name+'</option>').join('');
-    if(cur) sel.value = cur;
+    if(cur && unitCares.some(c => c.name === cur)) sel.value = cur;
 
     // ถ้ามีแคร์เดียว auto-select
     if(unitCares.length === 1) {
@@ -2207,11 +2210,36 @@ function renderKidsTable(unitId, care) {
 }
 
 // ===== หน้า "คริสตจักรเด็ก" (ครูรวี) — รวมเด็กทุกแคร์ =====
+// โหลดข้อมูลเด็กแล้ว render — ใช้กับปุ่ม "โหลดรายชื่อเด็ก"
+async function reloadKidsPage(){
+  apiToast('🔄 กำลังดึงรายชื่อเด็ก...','');
+  showLoading(true);
+  try {
+    await Promise.allSettled([churchLoadKids(), churchLoadCares()]);
+    genWeekOptions('kw');
+    renderKidsUnitPage();
+    apiToast('✅ โหลดรายชื่อเด็ก '+(churchKids||[]).length+' คน','ok');
+  } catch(e) {
+    console.error('reloadKidsPage:', e);
+    apiToast('❌ โหลดไม่สำเร็จ: '+e.message,'err');
+  }
+  showLoading(false);
+}
+
 function renderKidsUnitPage(){
   const cont = document.getElementById('kids-unit-content');
-  if(!cont) return;
+  if(!cont) {
+    console.warn('[renderKidsUnitPage] no kids-unit-content element');
+    return;
+  }
+  console.log('[renderKidsUnitPage] churchKids length:', (churchKids||[]).length);
+  // ถ้ายังไม่มีข้อมูล แสดงสถานะ loading
+  if(!churchKids || churchKids.length === 0) {
+    cont.innerHTML = '<div style="background:#fff;padding:30px;text-align:center;color:#999;border-radius:10px"><div style="font-size:24px;margin-bottom:10px">⏳</div>กำลังโหลดรายชื่อเด็ก...<br><small style="color:#bbb">ถ้านานเกินไป กดปุ่ม "🔄 โหลดรายชื่อเด็ก"</small></div>';
+    return;
+  }
   const kids = (churchKids||[]).slice().sort((a,b)=>{
-    if(a.care !== b.care) return a.care.localeCompare(b.care,'th');
+    if(a.care !== b.care) return (a.care||'').localeCompare(b.care||'','th');
     return (a.name||'').localeCompare(b.name||'','th');
   });
 
@@ -2340,17 +2368,17 @@ function toggleCk(el) {
 
 // ===== FILL DROPDOWNS ด้วย Cares จริง =====
 function churchFillCareDropdowns() {
-  // หา select ทุกอันในหน้ากรอกข้อมูล
+  // ⚠️ ข้าม unit care selects (#pc/#gc/#sc/#ic/#ic) — ให้ churchRenderMembersToChecklist
+  // จัดการเอง (filter per unit) เพื่อไม่ให้แต่ละหน่วยเห็นแคร์ของหน่วยอื่น
+  const SKIP_IDS = ['pc','gc','sc','ic','kw','pw','gw','sw','iw','db-view','db-period','db-range'];
   document.querySelectorAll('select').forEach(sel=>{
-    const opts=[...sel.options].map(o=>o.value);
-    // ถ้า select นั้นมี option ที่เป็นชื่อแคร์ → refill
-    if(opts.some(o=>o.includes('แคร์')||o.includes('เลือกแคร์')||o.includes('เลือกหน่วย'))) {
+    if(SKIP_IDS.includes(sel.id)) return;
+    const opts=[...sel.options].map(o=>o.value+'|'+o.textContent);
+    if(opts.some(o=>o.includes('แคร์')||o.includes('เลือกแคร์'))) {
       const cur=sel.value;
-      const isAll=churchSession.unit==='all';
-      const cares=isAll?churchCares:churchCares;
-      // เติม options
       const firstOpt=sel.options[0]?.value===''?sel.options[0].textContent:'-- เลือกแคร์ --';
-      sel.innerHTML='<option value="">'+firstOpt+'</option>'+cares.map(c=>'<option value="'+c.name+'">'+c.name+'</option>').join('');
+      sel.innerHTML='<option value="">'+firstOpt+'</option>'+
+        (churchCares||[]).map(c=>'<option value="'+c.name+'">'+c.name+'</option>').join('');
       if(cur) sel.value=cur;
     }
   });
@@ -2514,7 +2542,6 @@ function apiToast(msg,type){
 document.addEventListener('DOMContentLoaded', function() {
   var mtb = document.getElementById('main-tab-bar');
   if(mtb) mtb.style.display = 'none';
-  // ลองกู้ session จาก localStorage ก่อน — ถ้ามี ไม่ต้องล็อกอินใหม่
   var restored = false;
   try {
     var s = localStorage.getItem('church_sess');
