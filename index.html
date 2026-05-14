@@ -1991,8 +1991,15 @@ function churchRenderMembersToChecklist() {
 // ฟิลด์ในตาราง: dawn, church, lunch, ppch, david, careAtt, yy, one1, prok, offering
 // ลำดับสถานะฝ่ายวิญญาณ: หนน. → หนค. → พล. → สช. → ผช. → คจ.เด็ก → อื่นๆ
 const STATUS_ORDER = ['หนน.','หนค.','พล.','สช.','ผช.','คจ.เด็ก'];
+// รับทั้ง "พล" และ "พล." — เพิ่มจุดถ้าขาด เพื่อให้ rank/สี ตรงกันทุกแถว
+function normalizeStatus(s){
+  if(!s) return '';
+  s = String(s).trim();
+  const noDot = {'พล':'พล.','หนน':'หนน.','หนค':'หนค.','สช':'สช.','ผช':'ผช.','ผส':'ผส.','สถ':'สถ.','ผถ':'ผถ.'};
+  return noDot[s] || s;
+}
 function statusRank(s){
-  const i = STATUS_ORDER.indexOf(s);
+  const i = STATUS_ORDER.indexOf(normalizeStatus(s));
   return i<0 ? 99 : i;
 }
 
@@ -2325,7 +2332,7 @@ document.addEventListener('DOMContentLoaded', function() {
   } catch(e){ console.warn('session restore failed:',e); }
   if(!restored) {
     churchSession = null;
-  var overlay = document.getElementById('login-overlay');
+    var overlay = document.getElementById('login-overlay');
     if(overlay) overlay.style.cssText = 'display:flex !important;';
   }
 });
