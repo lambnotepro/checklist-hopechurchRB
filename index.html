@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="th">
 <head>
 <meta charset="UTF-8">
@@ -50,7 +49,7 @@ tbody td.L{text-align:left;padding-left:10px;}
 .nl{font-size:11px;color:var(--sub);font-weight:600;}
 .cb{width:17px;height:17px;border:2px solid #BDBDBD;border-radius:4px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:10px;color:#fff;user-select:none;}
 .cb:hover{border-color:#888;}.cb.on{background:#43A047;border-color:#43A047;}
-.cb.on::after{content:"checkmark";font-weight:700;}
+.cb.on::after{content:"";font-weight:700;}
 .nn{width:42px;padding:3px;border:1.5px solid #BDBDBD;border-radius:5px;font-family:"Sarabun",sans-serif;font-size:12px;font-weight:600;text-align:center;background:#F8F8F8;color:var(--text);}
 .nn:focus{outline:none;border-color:#1565C0;background:#fff;}
 .oi{width:58px;padding:3px 4px;border:1.5px solid #BDBDBD;border-radius:5px;font-family:"Sarabun",sans-serif;font-size:12px;font-weight:600;text-align:center;color:#880E4F;background:#FFF0F5;}
@@ -92,41 +91,41 @@ tbody td.L{text-align:left;padding-left:10px;}
 .note{background:#FFFDE7;border:1.5px solid #F9A825;border-radius:7px;padding:9px 13px;font-size:11px;color:#F57F17;margin-top:10px;font-weight:500;}
 
 /* DASHBOARD */
-.db-controls{display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;padding:14px;background:#fff;border-radius:10px;border:1.5px solid var(–bdr);box-shadow:0 2px 6px rgba(0,0,0,.04);}
+.db-controls{display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;flex-wrap:wrap;padding:14px;background:#fff;border-radius:10px;border:1.5px solid var(--bdr);box-shadow:0 2px 6px rgba(0,0,0,.04);}
 .db-sel{min-width:220px;}
 .db-sel-sm{min-width:160px;}
 .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px;}
-.metric-card{background:#fff;border-radius:10px;border:1.5px solid var(–bdr);padding:14px 16px;box-shadow:0 2px 6px rgba(0,0,0,.04);}
-.metric-card .mc-label{font-size:10px;font-weight:700;color:var(–sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.metric-card{background:#fff;border-radius:10px;border:1.5px solid var(--bdr);padding:14px 16px;box-shadow:0 2px 6px rgba(0,0,0,.04);}
+.metric-card .mc-label{font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
 .metric-card .mc-main{display:flex;align-items:flex-end;gap:6px;margin-bottom:3px;}
 .metric-card .mc-num{font-size:26px;font-weight:700;line-height:1;}
-.metric-card .mc-unit{font-size:11px;color:var(–sub);margin-bottom:3px;}
-.metric-card .mc-sub{font-size:11px;color:var(–sub);}
-.metric-card .mc-sub span{font-weight:700;color:var(–text);}
+.metric-card .mc-unit{font-size:11px;color:var(--sub);margin-bottom:3px;}
+.metric-card .mc-sub{font-size:11px;color:var(--sub);}
+.metric-card .mc-sub span{font-weight:700;color:var(--text);}
 .metric-card .mc-bar{height:4px;background:#E0E0E0;border-radius:2px;margin-top:8px;overflow:hidden;}
 .metric-card .mc-fill{height:100%;border-radius:2px;transition:width .6s ease;}
 .chart-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
 .chart-row.full{grid-template-columns:1fr;}
-.chart-wrap{background:#fff;border-radius:10px;border:1.5px solid var(–bdr);padding:16px;box-shadow:0 2px 6px rgba(0,0,0,.04);}
-.chart-title{font-size:12px;font-weight:700;color:var(–text);margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.chart-wrap{background:#fff;border-radius:10px;border:1.5px solid var(--bdr);padding:16px;box-shadow:0 2px 6px rgba(0,0,0,.04);}
+.chart-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:6px;}
 .chart-title .ct-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
 .bar-chart{display:flex;flex-direction:column;gap:8px;}
 .bar-item{display:flex;align-items:center;gap:8px;}
-.bar-label{font-size:11px;color:var(–sub);width:80px;text-align:right;flex-shrink:0;}
+.bar-label{font-size:11px;color:var(--sub);width:80px;text-align:right;flex-shrink:0;}
 .bar-track{flex:1;background:#F0F0F0;border-radius:3px;height:18px;overflow:hidden;position:relative;}
 .bar-fill{height:100%;border-radius:3px;transition:width .6s ease;display:flex;align-items:center;padding-left:6px;}
 .bar-val{font-size:10px;font-weight:700;color:#fff;white-space:nowrap;}
 .line-chart{position:relative;height:160px;}
 .line-svg{width:100%;height:100%;}
-.section-label{font-size:11px;font-weight:700;color:var(–sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid var(–bdr);}
+.section-label{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;padding-bottom:6px;border-bottom:1.5px solid var(--bdr);}
 .district-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px;}
-.district-card{background:#fff;border-radius:10px;border:1.5px solid var(–bdr);overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.04);}
+.district-card{background:#fff;border-radius:10px;border:1.5px solid var(--bdr);overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.04);}
 .district-header{padding:10px 14px;color:#fff;font-size:12px;font-weight:700;}
 .district-body{padding:12px 14px;}
 .district-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #F5F5F5;}
 .district-row:last-child{border:none;}
-.district-row .dr-label{font-size:11px;color:var(–sub);}
-.district-row .dr-val{font-size:13px;font-weight:700;color:var(–text);}
+.district-row .dr-label{font-size:11px;color:var(--sub);}
+.district-row .dr-val{font-size:13px;font-weight:700;color:var(--text);}
 .new-people-table{width:100%;border-collapse:collapse;font-size:12px;}
 .new-people-table thead th{padding:8px 10px;background:#E8F5E9;color:#1B5E20;font-weight:700;font-size:10px;text-align:center;border-bottom:2px solid #A5D6A7;}
 .new-people-table thead th.L{text-align:left;}
@@ -139,6 +138,7 @@ tbody td.L{text-align:left;padding-left:10px;}
 .badge-believe{background:#E8F5E9;color:#2E7D32;}
 .badge-special{background:#FFF3E0;color:#E65100;}
 @media(max-width:600px){.chart-row{grid-template-columns:1fr;}.bar-label{width:55px;}}
+
 
 /* ===== API / LOGIN OVERLAY ===== */
 #login-overlay{position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,#1a2744 0%,#0D1117 70%);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
@@ -178,12 +178,75 @@ tbody td.L{text-align:left;padding-left:10px;}
 .toast-api.show{transform:translateX(-50%) translateY(0);}
 .toast-api.ok{background:#2ea043;}.toast-api.err{background:#da3633;}
 
+
+/* ===== DASHBOARD V2 (clean redesign) ===== */
+.dv2{background:#FAF6F0;padding:18px 14px;border-radius:14px;}
+.dv2-hero{background:linear-gradient(135deg,#241F17 0%,#2E2719 100%);border-radius:16px;padding:22px 22px 18px;color:#fff;margin-bottom:16px;position:relative;overflow:hidden;}
+.dv2-hero::after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(255,200,80,.10) 0%,transparent 70%);border-radius:50%;}
+.dv2-hero-label{font-size:11px;font-weight:700;color:#D4A574;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
+.dv2-hero-date{font-size:24px;font-weight:800;color:#FFF7E6;margin-bottom:4px;line-height:1.2;}
+.dv2-hero-sub{font-size:12px;color:#A89478;margin-bottom:18px;}
+.dv2-hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.08);border-radius:10px;overflow:hidden;}
+.dv2-hero-stat{background:rgba(255,255,255,.02);padding:14px 12px;}
+.dv2-hero-stat .num{font-size:34px;font-weight:800;color:#F2A93B;line-height:1;margin-bottom:4px;}
+.dv2-hero-stat .lab{font-size:12px;color:#FFE6B8;font-weight:600;margin-bottom:2px;}
+.dv2-hero-stat .sub{font-size:10.5px;color:#A89478;}
+.dv2-special-wrap{margin-bottom:18px;}
+.dv2-special-title{font-size:13px;font-weight:700;color:#5C4830;margin-bottom:8px;}
+.dv2-special{background:#fff;border-radius:12px;border-left:5px solid #F2A93B;padding:14px 18px;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+.dv2-special-h{font-size:14px;font-weight:800;color:#B8862E;margin-bottom:10px;}
+.dv2-special-row{font-size:13px;color:#3A2F22;padding:4px 0;}
+.dv2-special-row strong{color:#1A1A1A;font-weight:700;}
+.dv2-section-title{font-size:13px;font-weight:700;color:#5C4830;margin:18px 0 10px;letter-spacing:.3px;}
+.dv2-grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:8px;}
+@media(min-width:900px){.dv2-grid2{grid-template-columns:repeat(3,1fr);}}
+.dv2-stat{background:#fff;border-radius:14px;padding:18px 14px;box-shadow:0 2px 8px rgba(0,0,0,.05);text-align:center;}
+.dv2-stat .ic{font-size:22px;margin-bottom:6px;}
+.dv2-stat .num{font-size:30px;font-weight:800;line-height:1;margin-bottom:6px;}
+.dv2-stat .lab{font-size:13px;font-weight:700;color:#3A2F22;margin-bottom:2px;}
+.dv2-stat .sub{font-size:11px;color:#8B7355;line-height:1.4;}
+.dv2-card{background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:14px;}
+.dv2-card-h{font-size:14px;font-weight:700;color:#3A2F22;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+.dv2-card-h .pill{font-size:11px;font-weight:700;padding:3px 12px;border-radius:12px;background:#FFF3DC;color:#B8862E;}
+.dv2-cmp-row{margin-bottom:14px;}
+.dv2-cmp-row:last-child{margin-bottom:0;}
+.dv2-cmp-head{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:baseline;margin-bottom:4px;font-size:13px;}
+.dv2-cmp-head .name{font-weight:700;color:#3A2F22;}
+.dv2-cmp-head .v1{color:#E89017;font-weight:800;font-size:15px;}
+.dv2-cmp-head .v2{color:#3D8BD9;font-weight:800;font-size:15px;}
+.dv2-cmp-head .slash{color:#BFAA8F;}
+.dv2-bar{height:9px;background:#F3EBDD;border-radius:5px;overflow:hidden;margin-bottom:4px;}
+.dv2-bar-fill{height:100%;border-radius:5px;transition:width .6s ease;}
+.dv2-bar-fill.o{background:#F2A93B;}
+.dv2-bar-fill.b{background:#5BA9EF;}
+.dv2-legend{display:flex;gap:14px;font-size:11px;color:#7A6648;margin-top:8px;}
+.dv2-legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+.dv2-donut-wrap{display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center;}
+.dv2-donut-svg{width:120px;height:120px;}
+.dv2-donut-center{font-size:18px;font-weight:800;fill:#3A2F22;}
+.dv2-donut-sub{font-size:8px;fill:#8B7355;}
+.dv2-donut-legend{display:flex;flex-direction:column;gap:6px;}
+.dv2-donut-legend .ln{display:grid;grid-template-columns:18px 1fr auto auto;align-items:center;gap:8px;font-size:13px;}
+.dv2-donut-legend .ln .nm{color:#3A2F22;font-weight:600;}
+.dv2-donut-legend .ln .nu{font-weight:800;font-size:15px;}
+.dv2-donut-legend .ln .pc{color:#8B7355;font-size:11px;}
+.dv2-unit-section{background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:12px;}
+.dv2-unit-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:6px;}
+.dv2-unit-name{font-size:15px;font-weight:800;color:#3A2F22;}
+.dv2-unit-total{font-size:11px;font-weight:700;padding:4px 12px;border-radius:12px;}
+.dv2-unit-row{display:grid;grid-template-columns:60px 1fr 40px;gap:10px;align-items:center;margin-bottom:7px;font-size:12px;}
+.dv2-unit-row:last-child{margin-bottom:0;}
+.dv2-unit-row .nm{color:#5C4830;font-weight:500;text-align:right;}
+.dv2-unit-row .val{font-weight:800;}
+.dv2-unit-bar{height:11px;background:#F3EBDD;border-radius:6px;overflow:hidden;}
+.dv2-unit-bar-fill{height:100%;border-radius:6px;transition:width .6s ease;}
+@media(max-width:520px){.dv2-hero-date{font-size:18px;}.dv2-hero-stat .num{font-size:24px;}.dv2-donut-wrap{grid-template-columns:100px 1fr;}}
+
 </style>
 </head>
 <body>
 
 <!-- LOGIN OVERLAY -->
-
 <div id="login-overlay" style="display:none">
   <div class="lo-logo">⛪</div>
   <div class="lo-title">คริสตจักรราชบุรี</div>
@@ -209,6 +272,7 @@ tbody td.L{text-align:left;padding-left:10px;}
 <div id="loading-bar"></div>
 <div class="toast-api" id="toast-api"></div>
 <div class="api-status" id="api-status"></div>
+
 
 <div class="tab-bar" id="main-tab-bar" style="display:none">
   <div class="tab active" id="tab-pro" onclick="show('pro',this)">&#127968; หน่วย Pro</div>
@@ -303,9 +367,9 @@ tbody td.L{text-align:left;padding-left:10px;}
   </div>
   <div class="cr">
     <div class="cg"><label>เลือกแคร์</label>
-      <select><option>แคร์ ภูมิศาสตร์ เมือง</option><option>แคร์ ภูมิศาสตร์ บ้านสิงห์</option></select></div>
+      <select id="gc" onchange="churchOnCareChange(this,'geo')"><option value="">-- เลือกแคร์ --</option><option>แคร์ ภูมิศาสตร์ เมือง</option><option>แคร์ ภูมิศาสตร์ บ้านสิงห์</option></select></div>
     <div class="cg"><label>เลือกสัปดาห์</label>
-      <select><option>อาทิตย์ที่ 04/05/2568</option><option>อาทิตย์ที่ 11/05/2568</option></select></div>
+      <select id="gw"><option>อาทิตย์ที่ 04/05/2568</option><option>อาทิตย์ที่ 11/05/2568</option></select></div>
   </div>
   <div class="legend">
     <span style="font-size:11px;font-weight:700;color:var(--sub);margin-right:4px;">คำอธิบาย:</span>
@@ -373,9 +437,9 @@ tbody td.L{text-align:left;padding-left:10px;}
   </div>
   <div class="cr">
     <div class="cg"><label>เลือกแคร์</label>
-      <select><option>แคร์ ซีเนียร์ เมือง</option><option>แคร์ ซีเนียร์ บ้านโป่ง</option></select></div>
+      <select id="sc" onchange="churchOnCareChange(this,'senior')"><option value="">-- เลือกแคร์ --</option><option>แคร์ ซีเนียร์ เมือง</option><option>แคร์ ซีเนียร์ บ้านโป่ง</option></select></div>
     <div class="cg"><label>เลือกสัปดาห์</label>
-      <select><option>อาทิตย์ที่ 04/05/2568</option><option>อาทิตย์ที่ 11/05/2568</option></select></div>
+      <select id="sw"><option>อาทิตย์ที่ 04/05/2568</option><option>อาทิตย์ที่ 11/05/2568</option></select></div>
   </div>
   <div class="tw">
     <div class="tt" style="background:#6A1B9A;">แคร์ ซีเนียร์ เมือง</div>
@@ -433,9 +497,9 @@ tbody td.L{text-align:left;padding-left:10px;}
   </div>
   <div class="cr">
     <div class="cg"><label>เลือกแคร์</label>
-      <select><option>แคร์ สถาบัน เมือง</option><option>แคร์ สถาบัน จอมบึง</option><option>แคร์ สถาบัน โพธาราม</option></select></div>
+      <select id="ic" onchange="churchOnCareChange(this,'inst')"><option value="">-- เลือกแคร์ --</option><option>แคร์ สถาบัน เมือง</option><option>แคร์ สถาบัน จอมบึง</option><option>แคร์ สถาบัน โพธาราม</option></select></div>
     <div class="cg"><label>เลือกสัปดาห์</label>
-      <select><option>อาทิตย์ที่ 04/05/2568</option><option>อาทิตย์ที่ 11/05/2568</option></select></div>
+      <select id="iw"><option>อาทิตย์ที่ 04/05/2568</option><option>อาทิตย์ที่ 11/05/2568</option></select></div>
   </div>
   <div class="tw">
     <div class="tt" style="background:#BF360C;">แคร์ สถาบัน เมือง</div>
@@ -487,8 +551,8 @@ tbody td.L{text-align:left;padding-left:10px;}
   </div>
 </div>
 
-<!-- ===== DASHBOARD ===== -->
 
+<!-- ===== DASHBOARD ===== -->
 <div class="page" id="pg-dash">
   <div class="uh" style="background:linear-gradient(135deg,#1A237E,#283593);">
     <h2>&#128202; ภาพรวมคริสตจักรราชบุรี</h2>
@@ -496,7 +560,6 @@ tbody td.L{text-align:left;padding-left:10px;}
   </div>
 
   <!-- Controls -->
-
   <div class="db-controls">
     <div class="cg">
       <label>&#128269; มุมมองข้อมูล</label>
@@ -527,9 +590,9 @@ tbody td.L{text-align:left;padding-left:10px;}
   </div>
 
   <!-- Dynamic content -->
-
   <div id="dash-content"></div>
 </div>
+
 
 <script>
 const WK=["04/05/2568","11/05/2568","18/05/2568","25/05/2568"];
@@ -602,7 +665,7 @@ function addNM(tid){
   if(!NC[tid])NC[tid]=0;const idx=++NC[tid];
   const uopts=UL.map(u=>"<option>"+u+"</option>").join("");
   const tr=document.createElement("tr");tr.id="nr-"+tid+"-"+idx;
-  tr.innerHTML="<td><input class=\"nmi\" type=\"text\" placeholder=\"ชื่อ-นามสกุล / ชื่อเล่น\"></td><td><select class=\"nms\" id=\"st-"+tid+"-"+idx+\"\" onchange=\"chkSp(this,\'sg-"+tid+"-"+idx+"\')\"><option value=\"\">เลือกสถานะ</option><option>ผู้สนใจ / เยี่ยมเยียน</option><option>รับเชื่อ</option><option>เยี่ยมเยียนพิเศษ</option></select></td><td><select class=\"nms\" id=\"sg-"+tid+"-"+idx+"\"><option value=\"\">เลือกสังกัด</option>"+uopts+"</select></td><td><div class=\"act-mini\"><div class=\"act-mini-row\"><span class=\"act-mini-lbl\" style=\"background:#E65100\">รุ่งอรุณ</span><span class=\"nm-cb\" onclick=\"this.classList.toggle(\'on\')\"></span></div><div class=\"act-mini-row\"><span class=\"act-mini-lbl\" style=\"background:#BF360C\">รอบหลัก</span><span class=\"nm-cb\" onclick=\"this.classList.toggle(\'on\')\"></span></div><div class=\"act-mini-row\"><span class=\"act-mini-lbl\" style=\"background:#004D40\">อาหารเที่ยง</span><span class=\"nm-cb\" onclick=\"this.classList.toggle(\'on\')\"></span></div><div class=\"act-mini-row\"><span class=\"act-mini-lbl\" style=\"background:#827717\">พพช.(บ่าย)</span><span class=\"nm-cb\" onclick=\"this.classList.toggle(\'on\')\"></span></div><div class=\"act-mini-row\"><span class=\"act-mini-lbl\" style=\"background:#1A237E\">ดาวิด</span><span class=\"nm-cb\" onclick=\"this.classList.toggle(\'on\')\"></span></div><div class=\"act-mini-row\"><span class=\"act-mini-lbl\" style=\"background:#2E7D32\">แคร์</span><span class=\"nm-cb\" onclick=\"this.classList.toggle(\'on\')\"></span></div></div></td><td style=\"text-align:center\"><button class=\"db\" onclick=\"delNM(\'"+tid+"\',\'nr-"+tid+"-"+idx+"\')\">x</button></td>";
+  tr.innerHTML="<td><input class=\"nmi\" type=\"text\" placeholder=\"ชื่อ-นามสกุล / ชื่อเล่น\"></td><td><select class=\"nms\" id=\"st-"+tid+"-"+idx+"\" onchange=\"chkSp(this,\'sg-"+tid+"-"+idx+"\')\"><option value=\"\">เลือกสถานะ</option><option>ผู้สนใจ / เยี่ยมเยียน</option><option>รับเชื่อ</option><option>เยี่ยมเยียนพิเศษ</option></select></td><td><select class=\"nms\" id=\"sg-"+tid+"-"+idx+"\"><option value=\"\">เลือกสังกัด</option>"+uopts+"</select></td><td><div class=\"act-mini\"><div class=\"act-mini-row\"><span class=\"act-mini-lbl\" style=\"background:#E65100\">รุ่งอรุณ</span><span class=\"nm-cb\" onclick=\"this.classList.toggle(\'on\')\"></span></div><div class=\"act-mini-row\"><span class=\"act-mini-lbl\" style=\"background:#BF360C\">รอบหลัก</span><span class=\"nm-cb\" onclick=\"this.classList.toggle(\'on\')\"></span></div><div class=\"act-mini-row\"><span class=\"act-mini-lbl\" style=\"background:#004D40\">อาหารเที่ยง</span><span class=\"nm-cb\" onclick=\"this.classList.toggle(\'on\')\"></span></div><div class=\"act-mini-row\"><span class=\"act-mini-lbl\" style=\"background:#827717\">พพช.(บ่าย)</span><span class=\"nm-cb\" onclick=\"this.classList.toggle(\'on\')\"></span></div><div class=\"act-mini-row\"><span class=\"act-mini-lbl\" style=\"background:#1A237E\">ดาวิด</span><span class=\"nm-cb\" onclick=\"this.classList.toggle(\'on\')\"></span></div><div class=\"act-mini-row\"><span class=\"act-mini-lbl\" style=\"background:#2E7D32\">แคร์</span><span class=\"nm-cb\" onclick=\"this.classList.toggle(\'on\')\"></span></div></div></td><td style=\"text-align:center\"><button class=\"db\" onclick=\"delNM(\'"+tid+"\',\'nr-"+tid+"-"+idx+"\')\">x</button></td>";
   tb.appendChild(tr);
 }
 function chkSp(stEl, sgId){
@@ -734,75 +797,177 @@ function renderDash(){
   },50);
 }
 
-// ===== VIEW 1: ภาพรวมจังหวัด =====
+// ===== VIEW 1: ภาพรวมจังหวัด (Redesign — clean & friendly) =====
+function thaiDate(){
+  const TH_M=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  let d=new Date(); d.setDate(d.getDate()-((d.getDay()+7)%7)); // Sunday ล่าสุด
+  return 'วันอาทิตย์ที่ '+d.getDate()+' '+TH_M[d.getMonth()]+' '+(d.getFullYear()+543);
+}
+
 function renderView1(period){
   const d = DEMO.province;
-  return `
-  <div class="section-label">&#9679; ยอดการมาโบสถ์ (รอบหลัก)</div>
-  <div class="metric-grid">
-    ${metricCard("รอบหลักรวม", d.church_total, "คน", "ผู้ใหญ่: <span>"+d.church_adult+"</span> | เด็ก: <span>"+d.church_kids+"</span>", "#1A237E", 97, 120)}
-    ${metricCard("ผู้ใหญ่", d.church_adult, "คน", "จากทั้งหมด 188 คน", "#1565C0", d.church_adult, 188)}
-    ${metricCard("เด็ก (คจ.เด็ก)", d.church_kids, "คน", "สัดส่วน "+(Math.round(d.church_kids/d.church_total*100))+"%", "#1976D2", d.church_kids, 30)}
-  </div>
+  const dateStr = thaiDate();
+  const acts = d.activities || {};
 
-  <div class="section-label">&#9679; ยอดการมาแคร์</div>
-  <div class="metric-grid">
-    ${metricCard("แคร์รวม", d.care_total, "คน", "ผู้ใหญ่: <span>"+d.care_adult+"</span> | เด็ก: <span>"+d.care_kids+"</span>", "#2E7D32", 77, 120)}
-    ${metricCard("ผู้ใหญ่", d.care_adult, "คน", "จากทั้งหมด 188 คน", "#43A047", d.care_adult, 188)}
-    ${metricCard("เด็ก (คจ.เด็ก)", d.care_kids, "คน", "สัดส่วน "+(Math.round(d.care_kids/d.care_total*100))+"%", "#66BB6A", d.care_kids, 30)}
-  </div>
-
-  <div class="section-label">&#9679; Mini-Church (มาเฉพาะโบสถ์ หรือ เฉพาะแคร์)</div>
-  <div class="metric-grid">
-    ${metricCard("Mini-Church รวม", d.mini_total, "คน", "ผู้ใหญ่: <span>"+d.mini_adult+"</span> | เด็ก: <span>"+d.mini_kids+"</span>", "#6A1B9A", 25, 120)}
-    ${metricCard("มาเฉพาะโบสถ์", 15, "คน", "ไม่มาแคร์", "#7B1FA2", 15, 30)}
-    ${metricCard("มาเฉพาะแคร์", 10, "คน", "ไม่มาโบสถ์", "#9C27B0", 10, 30)}
-  </div>
-
-  <div class="section-label">&#9679; คนใหม่และผู้รับเชื่อ</div>
-  <div class="metric-grid">
-    ${metricCard("ผู้สนใจ/คนใหม่", d.new_interest, "คน", "สัปดาห์นี้", "#E65100", 8, 20)}
-    ${metricCard("ผู้รับเชื่อ", d.new_believe, "คน", "สัปดาห์นี้", "#BF360C", 3, 20)}
-    ${metricCard("เยี่ยมพิเศษ*", d.new_special, "คน", "*จากคริสตจักรความหวังจังหวัดอื่น", "#827717", 2, 10)}
-  </div>
-
-  <div class="section-label">&#9679; ยอดถวายทรัพย์รวมจังหวัด</div>
-  <div class="metric-grid">
-    ${metricCard("ถวายรวมทั้งจังหวัด", d.offering_total.toLocaleString(), "บาท", "สัปดาห์นี้", "#880E4F", d.offering_total, 20000)}
-    ${Object.entries(d.offering_by_unit).map(([un,v])=>metricCard(un, v.toLocaleString(), "บาท", Math.round(v/d.offering_total*100)+"% ของจังหวัด", UNIT_COLORS[un]||"#555", v, d.offering_total)).join("")}
-  </div>
-  <div class="section-label">&#9679; สรุปตัวเลขย่อยแต่ละหน่วย</div>
-  <div class="district-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));">
-    ${Object.entries(DEMO.byUnit).map(([un,u])=>`
-    <div class="district-card">
-      <div class="district-header" style="background:${u.color}">${un}</div>
-      <div class="district-body">
-        <div class="district-row"><span class="dr-label">โบสถ์ (รอบหลัก)</span><span class="dr-val" style="color:${u.color}">${u.church} คน</span></div>
-        <div class="district-row"><span class="dr-label">แคร์</span><span class="dr-val" style="color:${u.color}">${u.care} คน</span></div>
-        <div class="district-row"><span class="dr-label">Mini-Church</span><span class="dr-val">${u.mini} คน</span></div>
-        <div class="district-row"><span class="dr-label">คนใหม่/สนใจ</span><span class="dr-val" style="color:#E65100">${u.new_int} คน</span></div>
-        <div class="district-row"><span class="dr-label">ผู้รับเชื่อ</span><span class="dr-val" style="color:#2E7D32;font-weight:700">${u.new_bel} คน</span></div>
-        <div class="district-row"><span class="dr-label">ถวาย</span><span class="dr-val" style="color:#880E4F">${(DEMO.province.offering_by_unit[un]||0).toLocaleString()} ฿</span></div>
+  // ===== Hero =====
+  const hero = `
+  <div class="dv2-hero">
+    <div class="dv2-hero-label">&#128202; สถิติการนมัสการ</div>
+    <div class="dv2-hero-date">${dateStr}</div>
+    <div class="dv2-hero-sub">ยอดผู้มาร่วม &middot; ทุกหน่วยงาน</div>
+    <div class="dv2-hero-stats">
+      <div class="dv2-hero-stat">
+        <div class="num">${d.care_total}</div>
+        <div class="lab">รวมมาแคร์</div>
+        <div class="sub">ผู้ใหญ่ ${d.care_adult} + เด็ก ${d.care_kids}</div>
       </div>
-    </div>`).join("")}
-  </div>
-
-  <div class="chart-row">
-    <div class="chart-wrap">
-      <div class="chart-title"><span class="ct-dot" style="background:#1A237E"></span>แนวโน้มการมาโบสถ์ (7 สัปดาห์)</div>
-      <div class="line-chart"><svg class="line-svg" id="trend-svg" viewBox="0 0 400 160"></svg></div>
+      <div class="dv2-hero-stat">
+        <div class="num">${d.church_total}</div>
+        <div class="lab">รวมมาโบสถ์</div>
+        <div class="sub">ผู้ใหญ่ ${d.church_adult} + เด็ก ${d.church_kids}</div>
+      </div>
+      <div class="dv2-hero-stat">
+        <div class="num">${d.mini_total}</div>
+        <div class="lab">มินิเซิ้ต/สัปดาห์</div>
+        <div class="sub">ผู้ใหญ่ ${d.mini_adult} + เด็ก ${d.mini_kids}</div>
+      </div>
     </div>
-    <div class="chart-wrap">
-      <div class="chart-title"><span class="ct-dot" style="background:#2E7D32"></span>กิจกรรมประจำสัปดาห์</div>
-      <div class="bar-chart" id="act-bars"></div>
-    </div>
-  </div>
-
-  <div class="section-label">&#9679; รายชื่อคนใหม่สัปดาห์นี้</div>
-  <div class="tw">
-    <div class="tt" style="background:#00695C;">&#128100; คนใหม่และผู้สนใจ — อาทิตย์ที่ 04/05/2568</div>
-    ${newPeopleTable(DEMO.newPeople)}
   </div>`;
+
+  // ===== Special records =====
+  const special = `
+  <div class="dv2-special-wrap">
+    <div class="dv2-special-title">&#128221; บันทึกพิเศษสัปดาห์นี้</div>
+    <div class="dv2-special">
+      <div class="dv2-special-h">&#10024; สิ่งพิเศษ</div>
+      <div class="dv2-special-row">&#127775; ผู้สนใจมา คจ. ครั้งแรก <strong>${d.new_interest} ท่าน</strong></div>
+      <div class="dv2-special-row">&#129309; ผู้รับเชื่อมา คจ. <strong>${d.new_believe} คน</strong></div>
+      <div class="dv2-special-row">&#128666; พย.ย้ายจาก คจ.อื่น <strong>${d.new_special} คน</strong> (ความหวังต่างจังหวัด)</div>
+    </div>
+  </div>`;
+
+  // ===== Quick stat grid =====
+  const grid = `
+  <div class="dv2-section-title">&#128200; ตัวเลขสำคัญ</div>
+  <div class="dv2-grid2">
+    <div class="dv2-stat"><div class="ic">&#127775;</div><div class="num" style="color:#E89017">${d.new_interest}</div><div class="lab">ผู้สนใจครั้งแรก</div></div>
+    <div class="dv2-stat"><div class="ic">&#129309;</div><div class="num" style="color:#2E7D32">${d.new_believe}</div><div class="lab">ผู้รับเชื่อ</div></div>
+    <div class="dv2-stat"><div class="ic">&#128118;</div><div class="num" style="color:#3D8BD9">${d.care_kids}</div><div class="lab">เด็กมาแคร์</div><div class="sub">เด็ก ${d.church_kids} มาโบสถ์</div></div>
+    <div class="dv2-stat"><div class="ic">&#128666;</div><div class="num" style="color:#7B1FA2">${d.new_special}</div><div class="lab">เยี่ยมเยียนพิเศษ</div></div>
+    <div class="dv2-stat"><div class="ic">&#128205;</div><div class="num" style="color:#BF360C">${acts.ppch||0}</div><div class="lab">พพช. (รวม)</div></div>
+    <div class="dv2-stat"><div class="ic">&#128081;</div><div class="num" style="color:#1A237E">${acts.david||0}</div><div class="lab">ดาวิด (รวม)</div></div>
+  </div>`;
+
+  // ===== Compare แคร์ vs โบสถ์ ต่อหน่วย =====
+  const units = Object.entries(DEMO.byUnit);
+  const maxV = Math.max(...units.map(([,u])=>Math.max(u.church,u.care)));
+  const cmpRows = units.map(([un,u])=>`
+    <div class="dv2-cmp-row">
+      <div class="dv2-cmp-head">
+        <span class="name">${un}</span>
+        <span class="v1">${u.care}</span>
+        <span class="slash">/</span>
+        <span class="v2">${u.church}</span>
+      </div>
+      <div class="dv2-bar"><div class="dv2-bar-fill o" style="width:${Math.round(u.care/maxV*100)}%"></div></div>
+      <div class="dv2-bar"><div class="dv2-bar-fill b" style="width:${Math.round(u.church/maxV*100)}%"></div></div>
+    </div>`).join("");
+  const compare = `
+  <div class="dv2-card">
+    <div class="dv2-card-h">&#9878;&#65039; เปรียบเทียบ แคร์ vs โบสถ์ <span class="pill">รวมจังหวัด</span></div>
+    ${cmpRows}
+    <div class="dv2-legend">
+      <span><span class="dot" style="background:#F2A93B"></span>แคร์</span>
+      <span><span class="dot" style="background:#5BA9EF"></span>โบสถ์</span>
+    </div>
+  </div>`;
+
+  // ===== Donut: สัดส่วนหน่วยงาน (ใช้ church) =====
+  const totalC = units.reduce((s,[,u])=>s+u.church,0);
+  let acc=0;
+  const C=60, R=44, SW=14;
+  const arcs = units.map(([un,u])=>{
+    const frac = u.church/totalC;
+    const start = acc; acc += frac;
+    const a1 = (start*2*Math.PI)-Math.PI/2;
+    const a2 = (acc*2*Math.PI)-Math.PI/2;
+    const x1=C+R*Math.cos(a1), y1=C+R*Math.sin(a1);
+    const x2=C+R*Math.cos(a2), y2=C+R*Math.sin(a2);
+    const large=frac>0.5?1:0;
+    return `<path d="M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2}" stroke="${u.color}" stroke-width="${SW}" fill="none"/>`;
+  }).join("");
+  const donutLegend = units.map(([un,u])=>{
+    const pc = Math.round(u.church/totalC*100);
+    return `<div class="ln">
+      <span style="width:14px;height:14px;border-radius:50%;background:${u.color};display:inline-block"></span>
+      <span class="nm">${un}</span>
+      <span class="nu" style="color:${u.color}">${u.church}</span>
+      <span class="pc">(${pc}%)</span>
+    </div>`;
+  }).join("");
+  const donut = `
+  <div class="dv2-card">
+    <div class="dv2-card-h">&#127919; สัดส่วนหน่วยงาน (ยอดมาโบสถ์)</div>
+    <div class="dv2-donut-wrap">
+      <svg class="dv2-donut-svg" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="44" stroke="#F3EBDD" stroke-width="14" fill="none"/>
+        ${arcs}
+        <text x="60" y="60" text-anchor="middle" class="dv2-donut-center" dy="6">${totalC}</text>
+        <text x="60" y="78" text-anchor="middle" class="dv2-donut-sub">คน (รวม)</text>
+      </svg>
+      <div class="dv2-donut-legend">${donutLegend}</div>
+    </div>
+  </div>`;
+
+  // ===== Per-unit sectioned cards =====
+  const unitSections = units.map(([un,u])=>{
+    const caresData = (DEMO.byUnitCares[un]&&DEMO.byUnitCares[un].cares)||{};
+    const cares = Object.entries(caresData);
+    const maxCC = Math.max(...cares.map(([,c])=>c.church),1);
+    const rows = cares.map(([cn,cd])=>{
+      const shortName = cn.replace("แคร์ ","").replace(un.replace("หน่วย","").trim()+" ","");
+      return `<div class="dv2-unit-row">
+        <span class="nm">${shortName}</span>
+        <div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${Math.round(cd.church/maxCC*100)}%;background:${u.color}"></div></div>
+        <span class="val" style="color:${u.color}">${cd.church}</span>
+      </div>`;
+    }).join("");
+    const lightBg = u.color+"1A";
+    return `<div class="dv2-unit-section">
+      <div class="dv2-unit-head">
+        <span class="dv2-unit-name">กลุ่ม${un.replace("หน่วย","")}</span>
+        <span class="dv2-unit-total" style="background:${lightBg};color:${u.color}">รวม ${u.church} คน</span>
+      </div>
+      ${rows}
+    </div>`;
+  }).join("");
+  const perUnit = `
+  <div class="dv2-section-title">&#128202; ยอดรวม แต่ละหน่วยงาน</div>
+  ${unitSections}`;
+
+  // ===== Offering =====
+  const offRows = Object.entries(d.offering_by_unit||{}).map(([un,v])=>{
+    const pc = Math.round(v/d.offering_total*100);
+    const cl = UNIT_COLORS[un]||"#888";
+    return `<div class="dv2-unit-row">
+      <span class="nm">${un.replace("หน่วย","")}</span>
+      <div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${pc}%;background:${cl}"></div></div>
+      <span class="val" style="color:${cl}">${v.toLocaleString()}</span>
+    </div>`;
+  }).join("");
+  const offering = `
+  <div class="dv2-card">
+    <div class="dv2-card-h">&#128176; ยอดถวายทรัพย์รวมจังหวัด <span class="pill" style="background:#FDE8F0;color:#880E4F">${d.offering_total.toLocaleString()} บาท</span></div>
+    ${offRows}
+  </div>`;
+
+  // ===== คนใหม่ =====
+  const newPpl = `
+  <div class="dv2-section-title">&#128100; รายชื่อคนใหม่สัปดาห์นี้</div>
+  <div class="tw"><div class="tt" style="background:#00695C">${dateStr}</div>
+  ${newPeopleTable(DEMO.newPeople)}</div>`;
+
+  return `<div class="dv2">${hero}${special}${grid}${compare}${donut}${perUnit}${offering}${newPpl}</div>`;
 }
 
 // ===== VIEW 2: แยกอำเภอ 4 อำเภอ =====
@@ -879,18 +1044,18 @@ function renderView2(period){
         </tr>
       </thead>
       <tbody>
-        ${Object.entries(DEMO.byDistrict).map(([dn,d],i)=>\`
-        <tr style="background:\${i%2===0?"#FAFAFA":"#fff"};border-bottom:1px solid #F0F0F0">
-          <td style="padding:8px 12px;font-weight:700;color:\${d.color};border-left:4px solid \${d.color}">\${dn}</td>
-          <td style="text-align:center;padding:8px 4px">\${d.yy||Math.round(d.church*0.4)}</td>
-          <td style="text-align:center;padding:8px 4px">\${d.one1||Math.round(d.church*0.15)}</td>
-          <td style="text-align:center;padding:8px 4px">\${d.announce||Math.round(d.church*0.1)}</td>
-          <td style="text-align:center;padding:8px 4px">\${d.david||Math.round(d.church*0.3)}</td>
-          <td style="text-align:center;padding:8px 4px">\${d.dawn||Math.round(d.church*0.5)}</td>
-          <td style="text-align:center;padding:8px 4px">\${d.lunch||Math.round(d.church*0.25)}</td>
-          <td style="text-align:center;padding:8px 4px">\${d.ppch||Math.round(d.church*0.4)}</td>
-          <td style="text-align:center;padding:8px 4px;font-weight:700;color:#880E4F">\${(d.offering||Math.round(d.church*120)).toLocaleString()}</td>
-        </tr>\`).join("")}
+        ${Object.entries(DEMO.byDistrict).map(([dn,d],i)=>`
+        <tr style="background:${i%2===0?"#FAFAFA":"#fff"};border-bottom:1px solid #F0F0F0">
+          <td style="padding:8px 12px;font-weight:700;color:${d.color};border-left:4px solid ${d.color}">${dn}</td>
+          <td style="text-align:center;padding:8px 4px">${d.yy||Math.round(d.church*0.4)}</td>
+          <td style="text-align:center;padding:8px 4px">${d.one1||Math.round(d.church*0.15)}</td>
+          <td style="text-align:center;padding:8px 4px">${d.announce||Math.round(d.church*0.1)}</td>
+          <td style="text-align:center;padding:8px 4px">${d.david||Math.round(d.church*0.3)}</td>
+          <td style="text-align:center;padding:8px 4px">${d.dawn||Math.round(d.church*0.5)}</td>
+          <td style="text-align:center;padding:8px 4px">${d.lunch||Math.round(d.church*0.25)}</td>
+          <td style="text-align:center;padding:8px 4px">${d.ppch||Math.round(d.church*0.4)}</td>
+          <td style="text-align:center;padding:8px 4px;font-weight:700;color:#880E4F">${(d.offering||Math.round(d.church*120)).toLocaleString()}</td>
+        </tr>`).join("")}
         <tr style="background:#E8EAF6;font-weight:700;border-top:2.5px solid #1A237E">
           <td style="padding:8px 12px;color:#1A237E;border-left:4px solid #1A237E">&#x2211; รวมทั้งจังหวัด</td>
           <td style="text-align:center;color:#1A237E">${Object.values(DEMO.byDistrict).reduce((s,d)=>s+(d.yy||Math.round(d.church*0.4)),0)}</td>
@@ -1425,7 +1590,7 @@ async function churchSaveNewPeople(unitId) {
   });
   if(!people.length) return;
   const today=new Date();
-  const ds=(today.getDate()+'').padStart(2,'0')+'/'+(today.getMonth()+2+'').padStart(2,'0')+'/'+(today.getFullYear()+543);
+  const ds=(today.getDate()+'').padStart(2,'0')+'/'+((today.getMonth()+1)+'').padStart(2,'0')+'/'+(today.getFullYear()+543);
   showLoading(true);
   for(const p of people){
     try{
@@ -1472,6 +1637,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 </script>
-
 </body>
 </html>
