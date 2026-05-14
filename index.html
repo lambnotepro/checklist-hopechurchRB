@@ -589,6 +589,9 @@ tbody td.L{text-align:left;padding-left:10px;}
     </div>
   </div>
 
+  <div style="text-align:right;margin-bottom:10px">
+    <button onclick="churchRefreshDashboard()" style="background:#1565C0;color:#fff;padding:8px 18px;font-size:12px;border:none;border-radius:8px;cursor:pointer;font-weight:700;box-shadow:0 2px 4px rgba(21,101,192,.3)">🔄 ดึงข้อมูลล่าสุดจาก Sheet</button>
+  </div>
   <!-- Dynamic content -->
   <div id="dash-content"></div>
 </div>
@@ -721,64 +724,58 @@ const UNITS_MAP = {
 // ข้อมูลตัวอย่างสำหรับ Demo
 const DEMO = {
   province: {
-    church_adult:85, church_kids:12, church_total:97,
-    care_adult:68,   care_kids:9,    care_total:77,
-    mini_adult:22,   mini_kids:3,    mini_total:25,
-    new_interest:8, new_believe:3, new_special:2, offering_total:12500, offering_by_unit:{"หน่วย Pro":4200,"หน่วยภูมิศาสตร์":3800,"หน่วย Senior":2900,"หน่วยสถาบัน":1600},
-    activities:{yy:42,one1:18,announce:12,david:35,dawn:55,lunch:28,ppch:40}
+    church_adult:0, church_kids:0, church_total:0,
+    care_adult:0, care_kids:0, care_total:0,
+    mini_adult:0, mini_kids:0, mini_total:0,
+    new_interest:0, new_believe:0, new_special:0,
+    offering_total:0,
+    offering_by_unit:{"หน่วย Pro":0,"หน่วยภูมิศาสตร์":0,"หน่วยซีเนียร์":0,"หน่วยสถาบัน":0},
+    activities:{yy:0,one1:0,announce:0,david:0,dawn:0,lunch:0,ppch:0}
   },
   byUnit: {
-    "หน่วย Pro":        {church:28,care:22,mini:6,new_int:3,new_bel:1,color:"#1565C0"},
-    "หน่วยภูมิศาสตร์": {church:25,care:20,mini:8,new_int:2,new_bel:1,color:"#2E7D32"},
-    "หน่วย Senior":     {church:30,care:18,mini:5,new_int:2,new_bel:0,color:"#6A1B9A"},
-    "หน่วยสถาบัน":      {church:14,care:8, mini:3,new_int:1,new_bel:1,color:"#BF360C"},
+    "หน่วย Pro":        {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#1565C0",members:0},
+    "หน่วยภูมิศาสตร์": {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#2E7D32",members:0},
+    "หน่วยซีเนียร์":   {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#6A1B9A",members:0},
+    "หน่วยสถาบัน":     {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#BF360C",members:0}
   },
   byDistrict: {
-    "อ.เมือง":    {church:52,care:41,mini:12,new_int:4,new_bel:2,color:"#1565C0",
-      cares:["แคร์ Pro เมือง","แคร์ ภูมิศาสตร์ เมือง","แคร์ ซีเนียร์ เมือง","แคร์ สถาบัน เมือง"]},
-    "อ.โพธาราม": {church:26,care:20,mini:6,new_int:2,new_bel:1,color:"#2E7D32",
-      cares:["แคร์ Pro โพธาราม","แคร์ ภูมิศาสตร์ บ้านสิงห์","แคร์ สถาบัน โพธาราม"]},
-    "อ.จอมบึง":  {church:10,care:7, mini:2,new_int:1,new_bel:0,color:"#6A1B9A",
-      cares:["แคร์ สถาบัน จอมบึง"]},
-    "อ.บ้านโป่ง":{church:9, care:6, mini:2,new_int:1,new_bel:0,color:"#BF360C",
-      cares:["แคร์ ซีเนียร์ บ้านโป่ง"]},
+    "อ.เมือง":    {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#1565C0",cares:["แคร์ Pro เมือง","แคร์ ภูมิศาสตร์ เมือง","แคร์ ซีเนียร์ เมือง","แคร์ สถาบัน เมือง"]},
+    "อ.โพธาราม": {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#2E7D32",cares:["แคร์ Pro โพธาราม","แคร์ ภูมิศาสตร์ บ้านสิงห์","แคร์ สถาบัน โพธาราม"]},
+    "อ.จอมบึง":  {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#6A1B9A",cares:["แคร์ สถาบัน จอมบึง"]},
+    "อ.บ้านโป่ง":{church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#BF360C",cares:["แคร์ ซีเนียร์ บ้านโป่ง"]}
   },
   byUnitCares: {
     "หน่วย Pro": {color:"#1565C0", cares:{
-      "แคร์ Pro เมือง":   {church:15,care:12,mini:3,new_int:2,new_bel:1,offering:1800},
-      "แคร์ Pro โพธาราม": {church:13,care:10,mini:3,new_int:1,new_bel:0,offering:1500},
+      "แคร์ Pro เมือง":   {church:0,care:0,mini:0,new_int:0,new_bel:0,offering:0,members:0},
+      "แคร์ Pro โพธาราม": {church:0,care:0,mini:0,new_int:0,new_bel:0,offering:0,members:0}
     }},
     "หน่วยภูมิศาสตร์": {color:"#2E7D32", cares:{
-      "แคร์ ภูมิศาสตร์ เมือง":    {church:14,care:11,mini:5,new_int:1,new_bel:1},
-      "แคร์ ภูมิศาสตร์ บ้านสิงห์":{church:11,care:9, mini:3,new_int:1,new_bel:0},
+      "แคร์ ภูมิศาสตร์ เมือง":    {church:0,care:0,mini:0,new_int:0,new_bel:0,members:0},
+      "แคร์ ภูมิศาสตร์ บ้านสิงห์":{church:0,care:0,mini:0,new_int:0,new_bel:0,members:0}
     }},
-    "หน่วย Senior": {color:"#6A1B9A", cares:{
-      "แคร์ ซีเนียร์ เมือง":  {church:18,care:11,mini:3,new_int:1,new_bel:0},
-      "แคร์ ซีเนียร์ บ้านโป่ง":{church:12,care:7, mini:2,new_int:1,new_bel:0},
+    "หน่วยซีเนียร์": {color:"#6A1B9A", cares:{
+      "แคร์ ซีเนียร์ เมือง":   {church:0,care:0,mini:0,new_int:0,new_bel:0,members:0},
+      "แคร์ ซีเนียร์ บ้านโป่ง":{church:0,care:0,mini:0,new_int:0,new_bel:0,members:0}
     }},
     "หน่วยสถาบัน": {color:"#BF360C", cares:{
-      "แคร์ สถาบัน เมือง":   {church:6,care:4,mini:1,new_int:1,new_bel:1},
-      "แคร์ สถาบัน จอมบึง":  {church:5,care:2,mini:1,new_int:0,new_bel:0},
-      "แคร์ สถาบัน โพธาราม": {church:3,care:2,mini:1,new_int:0,new_bel:0},
-    }},
+      "แคร์ สถาบัน เมือง":   {church:0,care:0,mini:0,new_int:0,new_bel:0,members:0},
+      "แคร์ สถาบัน จอมบึง":  {church:0,care:0,mini:0,new_int:0,new_bel:0,members:0},
+      "แคร์ สถาบัน โพธาราม": {church:0,care:0,mini:0,new_int:0,new_bel:0,members:0}
+    }}
   },
   byCare: {
-    "แคร์ Pro เมือง":           {church:15,care:12,mini:3,new_int:2,new_bel:1,color:"#1565C0"},
-    "แคร์ Pro โพธาราม":         {church:13,care:10,mini:3,new_int:1,new_bel:0,color:"#1976D2"},
-    "แคร์ ภูมิศาสตร์ เมือง":   {church:14,care:11,mini:5,new_int:1,new_bel:1,color:"#2E7D32"},
-    "แคร์ ภูมิศาสตร์ บ้านสิงห์":{church:11,care:9, mini:3,new_int:1,new_bel:0,color:"#388E3C"},
-    "แคร์ ซีเนียร์ เมือง":     {church:18,care:11,mini:3,new_int:1,new_bel:0,color:"#6A1B9A"},
-    "แคร์ ซีเนียร์ บ้านโป่ง":  {church:12,care:7, mini:2,new_int:1,new_bel:0,color:"#7B1FA2"},
-    "แคร์ สถาบัน เมือง":        {church:6, care:4, mini:1,new_int:1,new_bel:1,color:"#BF360C"},
-    "แคร์ สถาบัน จอมบึง":       {church:5, care:2, mini:1,new_int:0,new_bel:0,color:"#D84315"},
-    "แคร์ สถาบัน โพธาราม":      {church:3, care:2, mini:1,new_int:0,new_bel:0,color:"#E64A19"},
+    "แคร์ Pro เมือง":           {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#1565C0"},
+    "แคร์ Pro โพธาราม":         {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#1976D2"},
+    "แคร์ ภูมิศาสตร์ เมือง":    {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#2E7D32"},
+    "แคร์ ภูมิศาสตร์ บ้านสิงห์":{church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#388E3C"},
+    "แคร์ ซีเนียร์ เมือง":      {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#6A1B9A"},
+    "แคร์ ซีเนียร์ บ้านโป่ง":   {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#7B1FA2"},
+    "แคร์ สถาบัน เมือง":        {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#BF360C"},
+    "แคร์ สถาบัน จอมบึง":       {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#D84315"},
+    "แคร์ สถาบัน โพธาราม":      {church:0,care:0,mini:0,new_int:0,new_bel:0,color:"#E64A19"}
   },
-  newPeople:[
-    {name:"ตัวอย่าง ชื่อคนใหม่",nick:"ชื่อ",type:"ผู้สนใจ",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",unit_invite:"หน่วย Pro"},
-    {name:"ตัวอย่าง คนรับเชื่อ",nick:"ชื่อ",type:"รับเชื่อ",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",unit_invite:"หน่วยภูมิศาสตร์"},
-    {name:"ตัวอย่าง เยี่ยมพิเศษ",nick:"ชื่อ",type:"เยี่ยมเยียนพิเศษ",unit:"ความหวังต่างจังหวัด",care:"ความหวังต่างจังหวัด",unit_invite:"ผู้นำ"},
-  ],
-  trend:[62,71,68,85,79,88,97] // 7 สัปดาห์
+  newPeople:[],
+  trend:[0,0,0,0,0,0,0]
 };
 
 function renderDash(){
@@ -809,68 +806,83 @@ function renderView1(period){
   const dateStr = thaiDate();
   const acts = d.activities || {};
 
+  // คำนวณยอดสมาชิกทั้งหมดและแยกหน่วย (จาก roster)
+  const units = Object.entries(DEMO.byUnit);
+  const totalRoster = units.reduce((s,[,u])=>s+(u.members||0),0);
+  const totalChurch = units.reduce((s,[,u])=>s+(u.church||0),0);
+  const totalCare = units.reduce((s,[,u])=>s+(u.care||0),0);
+
   const hero = `
   <div class="dv2-hero">
     <div class="dv2-hero-label">&#128202; สถิติการนมัสการ</div>
     <div class="dv2-hero-date">${dateStr}</div>
-    <div class="dv2-hero-sub">ยอดผู้มาร่วม &middot; ทุกหน่วยงาน</div>
+    <div class="dv2-hero-sub">ยอดสมาชิกทั้งหมด <strong style="color:#FFD700">${totalRoster}</strong> คน &middot; ยอดมาร่วมประจำสัปดาห์</div>
     <div class="dv2-hero-stats">
       <div class="dv2-hero-stat">
-        <div class="num">${d.care_total}</div>
+        <div class="num">${totalCare||0}</div>
         <div class="lab">รวมมาแคร์</div>
-        <div class="sub">ผู้ใหญ่ ${d.care_adult} + เด็ก ${d.care_kids}</div>
+        <div class="sub">${d.care_total?('ผู้ใหญ่ '+d.care_adult+' + เด็ก '+d.care_kids):'ยังไม่บันทึก'}</div>
       </div>
       <div class="dv2-hero-stat">
-        <div class="num">${d.church_total}</div>
+        <div class="num">${totalChurch||0}</div>
         <div class="lab">รวมมาโบสถ์</div>
-        <div class="sub">ผู้ใหญ่ ${d.church_adult} + เด็ก ${d.church_kids}</div>
+        <div class="sub">${d.church_total?('ผู้ใหญ่ '+d.church_adult+' + เด็ก '+d.church_kids):'ยังไม่บันทึก'}</div>
       </div>
       <div class="dv2-hero-stat">
-        <div class="num">${d.mini_total}</div>
+        <div class="num">${d.mini_total||0}</div>
         <div class="lab">มินิเซิ้ต/สัปดาห์</div>
-        <div class="sub">ผู้ใหญ่ ${d.mini_adult} + เด็ก ${d.mini_kids}</div>
+        <div class="sub">${d.mini_total?('ผู้ใหญ่ '+d.mini_adult+' + เด็ก '+d.mini_kids):'ยังไม่บันทึก'}</div>
       </div>
     </div>
   </div>`;
 
-  const special = `
+  const hasSpecial = d.new_interest||d.new_believe||d.new_special;
+  const special = hasSpecial ? `
   <div class="dv2-special-wrap">
     <div class="dv2-special-title">&#128221; บันทึกพิเศษสัปดาห์นี้</div>
     <div class="dv2-special">
       <div class="dv2-special-h">&#10024; สิ่งพิเศษ</div>
       <div class="dv2-special-row">&#127775; ผู้สนใจมา คจ. ครั้งแรก <strong>${d.new_interest} ท่าน</strong></div>
       <div class="dv2-special-row">&#129309; ผู้รับเชื่อมา คจ. <strong>${d.new_believe} คน</strong></div>
-      <div class="dv2-special-row">&#128666; พย.ย้ายจาก คจ.อื่น <strong>${d.new_special} คน</strong> (ความหวังต่างจังหวัด)</div>
+      <div class="dv2-special-row">&#128666; พย.ย้ายจาก คจ.อื่น <strong>${d.new_special} คน</strong></div>
+    </div>
+  </div>` : `
+  <div class="dv2-special-wrap">
+    <div class="dv2-special-title">&#128221; บันทึกพิเศษสัปดาห์นี้</div>
+    <div class="dv2-special" style="border-left-color:#BFAA8F">
+      <div style="font-size:13px;color:#8B7355;padding:6px 0">ยังไม่มีบันทึกในสัปดาห์นี้ &middot; เริ่มกรอกในแท็บหน่วยของคุณ</div>
     </div>
   </div>`;
 
-  const grid = `
-  <div class="dv2-section-title">&#128200; ตัวเลขสำคัญ</div>
+  // ===== ยอดสมาชิกแต่ละหน่วย (roster) =====
+  const rosterSection = `
+  <div class="dv2-section-title">&#128101; ยอดสมาชิกแต่ละหน่วย (Active roster)</div>
   <div class="dv2-grid2">
-    <div class="dv2-stat"><div class="ic">&#127775;</div><div class="num" style="color:#E89017">${d.new_interest}</div><div class="lab">ผู้สนใจครั้งแรก</div></div>
-    <div class="dv2-stat"><div class="ic">&#129309;</div><div class="num" style="color:#2E7D32">${d.new_believe}</div><div class="lab">ผู้รับเชื่อ</div></div>
-    <div class="dv2-stat"><div class="ic">&#128118;</div><div class="num" style="color:#3D8BD9">${d.care_kids}</div><div class="lab">เด็กมาแคร์</div><div class="sub">เด็ก ${d.church_kids} มาโบสถ์</div></div>
-    <div class="dv2-stat"><div class="ic">&#128666;</div><div class="num" style="color:#7B1FA2">${d.new_special}</div><div class="lab">เยี่ยมเยียนพิเศษ</div></div>
-    <div class="dv2-stat"><div class="ic">&#128205;</div><div class="num" style="color:#BF360C">${acts.ppch||0}</div><div class="lab">พพช. (รวม)</div></div>
-    <div class="dv2-stat"><div class="ic">&#128081;</div><div class="num" style="color:#1A237E">${acts.david||0}</div><div class="lab">ดาวิด (รวม)</div></div>
+  ${units.map(([un,u])=>`
+    <div class="dv2-stat" style="border-top:3px solid ${u.color}">
+      <div class="ic">&#127968;</div>
+      <div class="num" style="color:${u.color}">${u.members||0}</div>
+      <div class="lab">${un}</div>
+      <div class="sub">มาแคร์: ${u.care||0} &middot; มาโบสถ์: ${u.church||0}</div>
+    </div>`).join('')}
   </div>`;
 
-  const units = Object.entries(DEMO.byUnit);
-  const maxV = Math.max(...units.map(([,u])=>Math.max(u.church,u.care)));
+  // Compare bars (this week)
+  const maxV = Math.max(...units.map(([,u])=>Math.max(u.church||0,u.care||0)), 1);
   const cmpRows = units.map(([un,u])=>`
     <div class="dv2-cmp-row">
       <div class="dv2-cmp-head">
         <span class="name">${un}</span>
-        <span class="v1">${u.care}</span>
+        <span class="v1">${u.care||0}</span>
         <span class="slash">/</span>
-        <span class="v2">${u.church}</span>
+        <span class="v2">${u.church||0}</span>
       </div>
-      <div class="dv2-bar"><div class="dv2-bar-fill o" style="width:${Math.round(u.care/maxV*100)}%"></div></div>
-      <div class="dv2-bar"><div class="dv2-bar-fill b" style="width:${Math.round(u.church/maxV*100)}%"></div></div>
+      <div class="dv2-bar"><div class="dv2-bar-fill o" style="width:${Math.round((u.care||0)/maxV*100)}%"></div></div>
+      <div class="dv2-bar"><div class="dv2-bar-fill b" style="width:${Math.round((u.church||0)/maxV*100)}%"></div></div>
     </div>`).join("");
   const compare = `
   <div class="dv2-card">
-    <div class="dv2-card-h">&#9878;&#65039; เปรียบเทียบ แคร์ vs โบสถ์ <span class="pill">รวมจังหวัด</span></div>
+    <div class="dv2-card-h">&#9878;&#65039; เปรียบเทียบ แคร์ vs โบสถ์ <span class="pill">สัปดาห์นี้</span></div>
     ${cmpRows}
     <div class="dv2-legend">
       <span><span class="dot" style="background:#F2A93B"></span>แคร์</span>
@@ -878,11 +890,12 @@ function renderView1(period){
     </div>
   </div>`;
 
-  const totalC = units.reduce((s,[,u])=>s+u.church,0);
+  // Donut: roster distribution
   let acc=0;
   const C=60, R=44, SW=14;
-  const arcs = units.map(([un,u])=>{
-    const frac = u.church/totalC;
+  const arcs = totalRoster>0 ? units.map(([un,u])=>{
+    const frac = (u.members||0)/totalRoster;
+    if(!frac) return '';
     const start = acc; acc += frac;
     const a1 = (start*2*Math.PI)-Math.PI/2;
     const a2 = (acc*2*Math.PI)-Math.PI/2;
@@ -890,76 +903,74 @@ function renderView1(period){
     const x2=C+R*Math.cos(a2), y2=C+R*Math.sin(a2);
     const large=frac>0.5?1:0;
     return `<path d="M ${x1} ${y1} A ${R} ${R} 0 ${large} 1 ${x2} ${y2}" stroke="${u.color}" stroke-width="${SW}" fill="none"/>`;
-  }).join("");
+  }).join("") : '';
   const donutLegend = units.map(([un,u])=>{
-    const pc = Math.round(u.church/totalC*100);
+    const pc = totalRoster>0 ? Math.round((u.members||0)/totalRoster*100) : 0;
     return `<div class="ln">
       <span style="width:14px;height:14px;border-radius:50%;background:${u.color};display:inline-block"></span>
       <span class="nm">${un}</span>
-      <span class="nu" style="color:${u.color}">${u.church}</span>
+      <span class="nu" style="color:${u.color}">${u.members||0}</span>
       <span class="pc">(${pc}%)</span>
     </div>`;
   }).join("");
   const donut = `
   <div class="dv2-card">
-    <div class="dv2-card-h">&#127919; สัดส่วนหน่วยงาน (ยอดมาโบสถ์)</div>
+    <div class="dv2-card-h">&#127919; สัดส่วนหน่วยงาน (สมาชิกทั้งหมด)</div>
     <div class="dv2-donut-wrap">
       <svg class="dv2-donut-svg" viewBox="0 0 120 120">
         <circle cx="60" cy="60" r="44" stroke="#F3EBDD" stroke-width="14" fill="none"/>
         ${arcs}
-        <text x="60" y="60" text-anchor="middle" class="dv2-donut-center" dy="6">${totalC}</text>
+        <text x="60" y="60" text-anchor="middle" class="dv2-donut-center" dy="6">${totalRoster}</text>
         <text x="60" y="78" text-anchor="middle" class="dv2-donut-sub">คน (รวม)</text>
       </svg>
       <div class="dv2-donut-legend">${donutLegend}</div>
     </div>
   </div>`;
 
+  // Per-unit sectioned cards — แสดง roster + attendance
   const unitSections = units.map(([un,u])=>{
     const caresData = (DEMO.byUnitCares[un]&&DEMO.byUnitCares[un].cares)||{};
     const cares = Object.entries(caresData);
-    const maxCC = Math.max(...cares.map(([,c])=>c.church),1);
+    const maxCC = Math.max(...cares.map(([,c])=>c.members||0), 1);
     const rows = cares.map(([cn,cd])=>{
-      const shortName = cn.replace("แคร์ ","").replace(un.replace("หน่วย","").trim()+" ","");
+      const shortName = cn.replace("แคร์ ","");
       return `<div class="dv2-unit-row">
         <span class="nm">${shortName}</span>
-        <div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${Math.round(cd.church/maxCC*100)}%;background:${u.color}"></div></div>
-        <span class="val" style="color:${u.color}">${cd.church}</span>
+        <div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${Math.round((cd.members||0)/maxCC*100)}%;background:${u.color}"></div></div>
+        <span class="val" style="color:${u.color}">${cd.members||0}</span>
       </div>`;
     }).join("");
     const lightBg = u.color+"1A";
     return `<div class="dv2-unit-section">
       <div class="dv2-unit-head">
-        <span class="dv2-unit-name">กลุ่ม${un.replace("หน่วย","")}</span>
-        <span class="dv2-unit-total" style="background:${lightBg};color:${u.color}">รวม ${u.church} คน</span>
+        <span class="dv2-unit-name">${un}</span>
+        <span class="dv2-unit-total" style="background:${lightBg};color:${u.color}">สมาชิก ${u.members||0} คน</span>
       </div>
       ${rows}
     </div>`;
   }).join("");
   const perUnit = `
-  <div class="dv2-section-title">&#128202; ยอดรวม แต่ละหน่วยงาน</div>
+  <div class="dv2-section-title">&#128202; สมาชิกแยกแคร์ (Active roster)</div>
   ${unitSections}`;
 
-  const offRows = Object.entries(d.offering_by_unit||{}).map(([un,v])=>{
-    const pc = Math.round(v/d.offering_total*100);
-    const cl = UNIT_COLORS[un]||"#888";
-    return `<div class="dv2-unit-row">
-      <span class="nm">${un.replace("หน่วย","")}</span>
-      <div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${pc}%;background:${cl}"></div></div>
-      <span class="val" style="color:${cl}">${v.toLocaleString()}</span>
-    </div>`;
-  }).join("");
-  const offering = `
-  <div class="dv2-card">
-    <div class="dv2-card-h">&#128176; ยอดถวายทรัพย์รวมจังหวัด <span class="pill" style="background:#FDE8F0;color:#880E4F">${d.offering_total.toLocaleString()} บาท</span></div>
-    ${offRows}
+  // Activity this week
+  const grid = `
+  <div class="dv2-section-title">&#128200; กิจกรรมสัปดาห์นี้</div>
+  <div class="dv2-grid2">
+    <div class="dv2-stat"><div class="ic">&#127775;</div><div class="num" style="color:#E89017">${d.new_interest||0}</div><div class="lab">ผู้สนใจครั้งแรก</div></div>
+    <div class="dv2-stat"><div class="ic">&#129309;</div><div class="num" style="color:#2E7D32">${d.new_believe||0}</div><div class="lab">ผู้รับเชื่อ</div></div>
+    <div class="dv2-stat"><div class="ic">&#128666;</div><div class="num" style="color:#7B1FA2">${d.new_special||0}</div><div class="lab">เยี่ยมเยียนพิเศษ</div></div>
+    <div class="dv2-stat"><div class="ic">&#128205;</div><div class="num" style="color:#BF360C">${acts.ppch||0}</div><div class="lab">พพช. (รวม)</div></div>
+    <div class="dv2-stat"><div class="ic">&#128081;</div><div class="num" style="color:#1A237E">${acts.david||0}</div><div class="lab">ดาวิด (รวม)</div></div>
+    <div class="dv2-stat"><div class="ic">&#128176;</div><div class="num" style="color:#880E4F">${(d.offering_total||0).toLocaleString()}</div><div class="lab">ถวายรวม (฿)</div></div>
   </div>`;
 
-  const newPpl = `
+  const newPpl = (DEMO.newPeople&&DEMO.newPeople.length)?`
   <div class="dv2-section-title">&#128100; รายชื่อคนใหม่สัปดาห์นี้</div>
   <div class="tw"><div class="tt" style="background:#00695C">${dateStr}</div>
-  ${newPeopleTable(DEMO.newPeople)}</div>`;
+  ${newPeopleTable(DEMO.newPeople)}</div>`:'';
 
-  return `<div class="dv2">${hero}${special}${grid}${compare}${donut}${perUnit}${offering}${newPpl}</div>`;
+  return `<div class="dv2">${hero}${special}${rosterSection}${donut}${perUnit}${compare}${grid}${newPpl}</div>`;
 }
 
 // ===== VIEW 2: แยกอำเภอ 4 อำเภอ =====
@@ -1343,9 +1354,21 @@ function loRestoreSession() {
 
 // ===== AFTER LOGIN =====
 async function afterLogin() {
-  // แสดง tab-bar
-  const mtb = document.getElementById('main-tab-bar');
-  if(mtb) mtb.style.display = 'flex';
+  try {
+    // แสดง tab-bar
+    const mtb = document.getElementById('main-tab-bar');
+    if(mtb) mtb.style.display = 'flex';
+
+    // ✅ Session badge
+    const sInfo = document.getElementById('session-info');
+    const sBadge = document.getElementById('s-badge');
+    if(sBadge && churchSession) {
+      const unitShort = (churchSession.unit||'').replace('หน่วย','').trim();
+      sBadge.textContent = '👤 ' + (churchSession.role==='admin'?'Admin':unitShort) + ' · ออกจากระบบ';
+      sBadge.style.background = (churchSession.color||'#1565C0');
+      sBadge.style.color = '#fff';
+      if(sInfo) sInfo.style.display = 'block';
+    }
 
   // จำกัดแท็บตาม role
   const unitTabMap = {'หน่วย Pro':'pro','หน่วยภูมิศาสตร์':'geo','หน่วยซีเนียร์':'senior','หน่วยสถาบัน':'inst'};
@@ -1365,12 +1388,34 @@ async function afterLogin() {
     }
   }
 
-  // รัน render หลัง login
-  renderPro();
-  renderDash();
-  // โหลดข้อมูลจาก API แล้วแสดงในหน้า
-  await churchLoadAll();
-  churchRenderMembersToChecklist();
+    // รัน render หลัง login
+    renderPro();
+    renderDash();
+    // โหลดข้อมูลจาก API แล้วแสดงในหน้า
+    await churchLoadAll();
+    churchRenderMembersToChecklist();
+  } catch(err) {
+    console.error('afterLogin error:', err);
+    apiToast('⚠️ เกิดข้อผิดพลาด: ' + err.message, 'err');
+  }
+}
+
+// ===== COMPUTE: ปรับ DEMO ตามจำนวนสมาชิกจริงในชีต =====
+function computeMemberCounts() {
+  if(!churchMembers || !churchMembers.length) return;
+  // เคลียร์ counter
+  Object.keys(DEMO.byUnit).forEach(u => { DEMO.byUnit[u].members = 0; });
+  Object.values(DEMO.byUnitCares).forEach(unit => {
+    Object.values(unit.cares).forEach(c => { c.members = 0; });
+  });
+  churchMembers.forEach(m => {
+    // ข้ามคนที่อยู่ใน inactive
+    if(['สถ.','ผถ.'].includes(m.status)) return;
+    if(DEMO.byUnit[m.unit]) DEMO.byUnit[m.unit].members++;
+    if(DEMO.byUnitCares[m.unit] && DEMO.byUnitCares[m.unit].cares[m.care]) {
+      DEMO.byUnitCares[m.unit].cares[m.care].members++;
+    }
+  });
 }
 
 // ===== LOAD ALL DATA =====
@@ -1383,15 +1428,141 @@ async function churchLoadAll() {
   try { churchFillCareDropdowns(); } catch(e){ console.warn('fillCareDropdowns:',e); }
   const memErr = results[1].status==='rejected' || !churchMembers || !churchMembers.length;
   if(memErr) {
-    apiToast('⚠️ API ดึงสมาชิกไม่ได้ — แสดงตัวอย่างให้ดูโครงสร้าง','err');
+    apiToast('⚠️ API ดึงข้อมูลไม่ได้ — ใช้สำเนาในเครื่อง ('+churchMembers.length+' คน)','err');
   } else {
     apiToast('✅ โหลดข้อมูลสำเร็จ '+churchMembers.length+' คน','ok');
   }
+  // คำนวณยอดสมาชิกจริงเข้า DEMO
+  computeMemberCounts();
+  // ดึง weekly + newpeople real-time แล้ว aggregate
+  try { 
+    await Promise.allSettled([churchLoadWeekly(), churchLoadNewPeople()]);
+    aggregateThisWeek();
+  } catch(e){ console.warn('weekly aggregate failed:',e); }
+  // re-render dashboard ถ้ามี
+  if(document.getElementById('dash-content')) renderDash();
   showLoading(false);
 }
 
-// stub กันไม่ให้ ReferenceError (ฟังก์ชันเดิมไม่ได้ define ไว้)
-function churchLoadNewPeople(){ /* placeholder */ }
+// ปุ่ม Refresh — ผู้ใช้กดเพื่อดึงข้อมูลล่าสุดจากชีต
+async function churchRefreshDashboard() {
+  showLoading(true);
+  apiToast('🔄 กำลังดึงข้อมูลล่าสุดจากชีต...','');
+  await Promise.allSettled([churchLoadWeekly(), churchLoadNewPeople(), churchLoadMembers()]);
+  computeMemberCounts();
+  aggregateThisWeek();
+  if(document.getElementById('dash-content')) renderDash();
+  apiToast('✅ ภาพรวมอัปเดตล่าสุดแล้ว','ok');
+  showLoading(false);
+}
+
+// ===== ดึง WEEKLY_LOG + NEW_PEOPLE ของสัปดาห์นี้ มาสรุปในภาพรวม =====
+let churchWeeklyRows = [];
+let churchNewPeople = [];
+
+function thaiWeekDate(){
+  // Sunday ล่าสุด (Buddhist date dd/mm/yyyy)
+  let d=new Date(); d.setDate(d.getDate()-((d.getDay()+7)%7));
+  const dd=String(d.getDate()).padStart(2,'0');
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const yy=d.getFullYear()+543;
+  return dd+'/'+mm+'/'+yy;
+}
+
+async function churchLoadWeekly() {
+  try {
+    const tok = (churchSession&&churchSession.token)||'';
+    const r = await fetch(CHURCH_API+'?action=weekly&token='+tok);
+    const d = await r.json();
+    if(d.ok) { churchWeeklyRows = d.data||[]; return; }
+    churchWeeklyRows = [];
+  } catch(e){ churchWeeklyRows = []; }
+}
+
+async function churchLoadNewPeople() {
+  try {
+    const tok = (churchSession&&churchSession.token)||'';
+    const r = await fetch(CHURCH_API+'?action=newpeople&token='+tok);
+    const d = await r.json();
+    if(d.ok) { churchNewPeople = d.data||[]; return; }
+    churchNewPeople = [];
+  } catch(e){ churchNewPeople = []; }
+}
+
+// คำนวณยอดประจำสัปดาห์จาก weekly rows (เฉพาะ Sunday ล่าสุด)
+function aggregateThisWeek() {
+  const wkStr = thaiWeekDate();
+  // เคลียร์ตัวเลข weekly แต่คงค่า members ไว้
+  Object.values(DEMO.byUnit).forEach(u=>{u.church=0;u.care=0;u.mini=0;u.new_int=0;u.new_bel=0;});
+  Object.values(DEMO.byUnitCares).forEach(unit=>{
+    Object.values(unit.cares).forEach(c=>{c.church=0;c.care=0;c.mini=0;c.new_int=0;c.new_bel=0;c.offering=0;});
+  });
+  Object.values(DEMO.byCare).forEach(c=>{c.church=0;c.care=0;c.mini=0;c.new_int=0;c.new_bel=0;});
+  const pv = DEMO.province;
+  pv.church_adult=0; pv.church_kids=0; pv.church_total=0;
+  pv.care_adult=0; pv.care_kids=0; pv.care_total=0;
+  pv.mini_adult=0; pv.mini_kids=0; pv.mini_total=0;
+  pv.offering_total=0;
+  pv.activities = {yy:0,one1:0,announce:0,david:0,dawn:0,lunch:0,ppch:0};
+  pv.offering_by_unit={"หน่วย Pro":0,"หน่วยภูมิศาสตร์":0,"หน่วยซีเนียร์":0,"หน่วยสถาบัน":0};
+
+  // เลือกเฉพาะแถวสัปดาห์นี้
+  const rows = (churchWeeklyRows||[]).filter(r=>{
+    if(!r.date) return false;
+    const ds = (typeof r.date==='string')?r.date:String(r.date);
+    return ds.indexOf(wkStr)>=0;
+  });
+
+  rows.forEach(r=>{
+    const u = DEMO.byUnit[r.unit];
+    const uc = (DEMO.byUnitCares[r.unit]&&DEMO.byUnitCares[r.unit].cares[r.care])||null;
+    const bc = DEMO.byCare[r.care];
+    const inc = (key,delta) => {
+      if(u) u[key] = (u[key]||0)+delta;
+      if(uc) uc[key] = (uc[key]||0)+delta;
+      if(bc) bc[key] = (bc[key]||0)+delta;
+    };
+    const tick = v => v==='✓' || v===true || v==='TRUE' || v==='true';
+    if(tick(r.church)) { inc('church',1); pv.church_total++; pv.church_adult++; pv.activities.dawn += tick(r.dawn)?1:0; }
+    if(tick(r.careAtt)) { inc('care',1); pv.care_total++; pv.care_adult++; }
+    if(tick(r.dawn)) pv.activities.dawn = (pv.activities.dawn||0); // already counted
+    if(tick(r.lunch)) pv.activities.lunch = (pv.activities.lunch||0)+1;
+    if(tick(r.ppch)) pv.activities.ppch = (pv.activities.ppch||0)+1;
+    if(tick(r.david)) pv.activities.david = (pv.activities.david||0)+1;
+    pv.activities.yy += (+r.yy||0);
+    pv.activities.one1 += (+r.one1||0);
+    pv.activities.announce += (+r.prok||0);
+    const off = +r.offering||0;
+    pv.offering_total += off;
+    if(uc) uc.offering = (uc.offering||0)+off;
+    if(r.unit && pv.offering_by_unit.hasOwnProperty(r.unit)) {
+      pv.offering_by_unit[r.unit] += off;
+    }
+    // mini = มาเฉพาะโบสถ์หรือเฉพาะแคร์
+    if((tick(r.church)&&!tick(r.careAtt))||(tick(r.careAtt)&&!tick(r.church))) {
+      inc('mini',1); pv.mini_total++; pv.mini_adult++;
+    }
+  });
+
+  // คนใหม่สัปดาห์นี้
+  const newPplWk = (churchNewPeople||[]).filter(p=>{
+    if(!p.date) return false;
+    const ds = (typeof p.date==='string')?p.date:String(p.date);
+    return ds.indexOf(wkStr)>=0;
+  });
+  let nInt=0, nBel=0, nSpec=0;
+  newPplWk.forEach(p=>{
+    if(p.type==='ผู้สนใจ / เยี่ยมเยียน' || p.type==='ผู้สนใจ') nInt++;
+    else if(p.type==='รับเชื่อ') nBel++;
+    else if(p.type==='เยี่ยมเยียนพิเศษ'||p.type==='เยี่ยมพิเศษ') nSpec++;
+  });
+  pv.new_interest = nInt; pv.new_believe = nBel; pv.new_special = nSpec;
+  // เซ็ตให้ newPeople แสดงในตาราง
+  DEMO.newPeople = newPplWk.map(p=>({
+    name:p.name, nick:p.nick||'', type:p.type,
+    unit:p.unit||'', care:p.care||''
+  }));
+}
 
 async function churchLoadCares() {
   try {
@@ -1434,47 +1605,178 @@ async function churchLoadMembers() {
 {id:"M003",prefix:"นาย",name:"ศุภศักดิ์ ชัยธัชวาณิชย์",nick:"สิบ/นิว",status:"หนค.",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
 {id:"M004",prefix:"นางสาว",name:"นันท์นภัส ขำอิน",nick:"แอม",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
 {id:"M005",prefix:"น.ส.",name:"รัชณาพร มณีจันทร์",nick:"เดียร์",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M006",prefix:"นางสาว",name:"สาวิตรี มะลิคง",nick:"เกด",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M007",prefix:"นาย",name:"ธีรเจต สุทธิเชษฐ์",nick:"แอ๊ค",status:"สช.",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M008",prefix:"นาย",name:"พงษ์พิพัฒน์ เชยชมวงศ์",nick:"พงษ์",status:"สช.",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M009",prefix:"นางสาว",name:"สิตานัน ตัณฑ์เจริญรัตน์",nick:"มะตูม",status:"สช.",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M010",prefix:"ด.ช.",name:"คุณากร ชัยธัชวาณิชย์",nick:"แมทธิว",status:"คจ.เด็ก",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M011",prefix:"ด.ญ.",name:"คุณากานต์ ชัยธัชวาณิชย์",nick:"เอสเธอร์",status:"คจ.เด็ก",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M012",prefix:"ด.ญ.",name:"วนัชพร เชยชมวงศ์",nick:"ลาฟเทล",status:"คจ.เด็ก",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M013",prefix:"ด.ช.",name:"วิริยะ มะลิคง",nick:"เกล้า",status:"คจ.เด็ก",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
+{id:"M014",prefix:"ด.ช.",name:"ศิวกร มะลิคง",nick:"ลีวาย",status:"คจ.เด็ก",unit:"หน่วย Pro",care:"แคร์ Pro โพธาราม",district:"อ.โพธาราม"},
 {id:"M015",prefix:"นางสาว",name:"ธนันพัชร บัวเย็น",nick:"แม่ปู",status:"ผส.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
 {id:"M016",prefix:"นาย",name:"ประสงค์ ขำอิน",nick:"พ่อสงค์",status:"ผส.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
 {id:"M017",prefix:"นาย",name:"สิทธิคุณ ลิมป์พาณิชย์กูล",nick:"ทีม",status:"หนน.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
 {id:"M018",prefix:"ว่าที่ร.ต.หญิง",name:"ฐิดารัตน์ พ่วงศิริ",nick:"ทราย",status:"หนค.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
 {id:"M019",prefix:"ทพ.ญ.",name:"ณัชค์สมิน พัชรวิภาคกิจ",nick:"หมิว",status:"หนค.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M020",prefix:"นาย",name:"คมชาญ เชื้อสกุล",nick:"ไอซ์",status:"หนค.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M021",prefix:"ว่าที่ร.ต.หญิง",name:"ปุณิกา ประเทืองผล",nick:"แพรว",status:"หนค.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M022",prefix:"นายหมวดตรี",name:"ยุทธภพ จันทเต็ง",nick:"สิงโต",status:"หนค.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M023",prefix:"นาย",name:"ธราธิป จันทพันธ์",nick:"คุณ",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M024",prefix:"นางสาว",name:"นันท์นัช วารีนิล",nick:"เนม",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M025",prefix:"นาย",name:"วรินทร์ สิทธิชูเกียรติ",nick:"โบ๊ต",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M026",prefix:"นาย",name:"ศุภกฤต จรไพร",nick:"ภูมิ",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M027",prefix:"นาย",name:"กำธร องค์พิสุทธิ์",nick:"พี่เฮาส์",status:"สช.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M028",prefix:"นาย",name:"ชาติ ไมมีนามสกุล",nick:"ชาติ",status:"สช.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M029",prefix:"นางสาว",name:"ฐิตตา เกตุไชโย",nick:"ดรีม ญ.",status:"สช.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M030",prefix:"นาย",name:"ธนกร ช่วยรอด",nick:"ดรีม ช.",status:"สช.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M031",prefix:"นางสาว",name:"เบญญา ภูริ",nick:"น้ำผึ้ง",status:"สช.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M032",prefix:"นาย",name:"สิรทัต รัตนเลขา",nick:"เบส",status:"สช.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M033",prefix:"นาย",name:"อัครพล วุฒิชัย",nick:"เอิร์ท",status:"สช.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M034",prefix:"นาย",name:"บรภวิทย์ ทิพยทัศนัน",nick:"อิ้งค์",status:"ผช.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M035",prefix:"ด.ช.",name:"เลโอ จันทเต็ง",nick:"เลโอ",status:"คจ.เด็ก",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M036",prefix:"ด.ช.",name:"อาสลัน จันทเต็ง",nick:"อาส-ลัน",status:"คจ.เด็ก",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
+{id:"M177",prefix:"นางสาว",name:"ธนันพัชร บัวเย็น",nick:"แม่ปู",status:"ผช.",unit:"หน่วย Pro",care:"แคร์ Pro เมือง",district:"อ.เมือง"},
 {id:"M037",prefix:"นาย",name:"ณัฐวุฒิ มีแสง",nick:"แมนยู",status:"พล.",unit:"หน่วย Pro",care:"แคร์ Startup Pro",district:"อ.เมือง"},
 {id:"M038",prefix:"นาย",name:"แอ้   ไม่มีนามสกุล",nick:"แอ้",status:"หนค.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
 {id:"M039",prefix:"น.ส.",name:"แป้ง  ไม่มีนามสกุล",nick:"แป้ง",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
 {id:"M040",prefix:"นาย",name:"เปรมชัย   ซีแซ่",nick:"เปรม",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
 {id:"M041",prefix:"น.ส.",name:"ฟ้า   ไม่มีนามสกุล",nick:"ฟ้า",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
 {id:"M042",prefix:"น.ส.",name:"สุธิดา  คงอยู่",nick:"เล",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
+{id:"M043",prefix:"น.ส.",name:"สุริกา     บุญทอง",nick:"ลิ้นจี่",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ บ้านสิงห์",district:"อ.โพธาราม"},
 {id:"M044",prefix:"นาย",name:"วัฒนา  วงศ์ทอง",nick:"นาธาน",status:"หนน.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
 {id:"M045",prefix:"นาย",name:"ใจวา -",nick:"ใจวา",status:"หนค.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
 {id:"M046",prefix:"น.ส.",name:"ปราณี วงศ์ทอง",nick:"ณี",status:"หนค.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
 {id:"M047",prefix:"น.ส.",name:"สายน้ำ  บุญธานี",nick:"ดาว",status:"หนค.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
 {id:"M048",prefix:"น.ส.",name:"อรอุมา  บุญทอง",nick:"ลิลลี่",status:"หนค.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M049",prefix:"นาย",name:"คาวี  เมืองน้อย",nick:"คาวี",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M050",prefix:"นาย",name:"จอกระเจ้อ คาแม้",nick:"เจ้อ",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M051",prefix:"น.ส.",name:"ดารา   ไม่มีนามสกุล",nick:"ดารา",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M052",prefix:"นาย",name:"แน่นอน   ไม่มีนามสกุล",nick:"แน่นอน",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M053",prefix:"น.ส.",name:"แป้ง   คำลือ",nick:"แป้ง",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M054",prefix:"น.ส.",name:"โม     ไม่มีนามสกุล",nick:"โม",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M055",prefix:"น.ส.",name:"เลวา  บุญช่วย",nick:"เลวา",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M056",prefix:"น.ส.",name:"สรดา   ไม่มีนามสกุล",nick:"รดา",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M057",prefix:"น.ส.",name:"หลิง",nick:"หลิง",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M058",prefix:"นาย",name:"อยุท  แจ้งเจริญ",nick:"ยุทร",status:"พล.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M059",prefix:"น.ส.",name:"ข้าง   ไม่มีนามสกุล",nick:"ข้าง",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M060",prefix:"น.ส.",name:"จอย  ดาเล่",nick:"จอย",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M061",prefix:"นาย",name:"เจวา",nick:"",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M062",prefix:"นาย",name:"เจี๊ยบ     กวานตระกูล",nick:"เจี๊ยบ",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M063",prefix:"นาย",name:"ชัยสุข    บุญช่วยช่วย",nick:"บอย",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M064",prefix:"นาง",name:"ชิชิ",nick:"ชิชิ",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M065",prefix:"นาย",name:"โชค",nick:"โชค",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M066",prefix:"นาง",name:"ซูเล่",nick:"ซูเล่",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M067",prefix:"น.ส.",name:"ดาว    ไม่มีนามสกุล",nick:"ดาว",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M068",prefix:"นาย",name:"ดาวิด",nick:"ดาวิด",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M069",prefix:"น.ส.",name:"ทราย   ไม่มีนามสกุล",nick:"ทราย",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M070",prefix:"นาย",name:"ทอง   ไม่มีนามสกุล",nick:"ทอง",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M071",prefix:"น.ส.",name:"นก",nick:"นก",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M072",prefix:"นาย",name:"นพ",nick:"นพ",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M073",prefix:"นาง",name:"นอทู",nick:"นอทู",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M074",prefix:"นาง",name:"นอนอ",nick:"นอนอ",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M075",prefix:"น.ส.",name:"นัท",nick:"นัท",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M076",prefix:"นาง",name:"บัวสี วงศ์ทอง",nick:"บัวสี",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M077",prefix:"น.ส.",name:"เบบี๋   ออกบัตร",nick:"เบบี๋",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M078",prefix:"นาย",name:"ปุ้ยซ่า",nick:"ปุ้ยซ่า",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M079",prefix:"นาย",name:"เป้",nick:"เป้",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M080",prefix:"นาง",name:"ฝน",nick:"ฝน",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M081",prefix:"นาง",name:"พร",nick:"พร",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M082",prefix:"น.ส.",name:"โพ้ คำลือ",nick:"โบว์",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M083",prefix:"นาง",name:"โม นา ดา",nick:"โม นา ดา",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M084",prefix:"นาย",name:"ไม้",nick:"ไม้",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M085",prefix:"น.ส.",name:"ยุ   ไม่มีนามสกุล",nick:"ยุ",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M086",prefix:"น.ส.",name:"ลิลลี่   ไม่มีนามสกุล",nick:"ลิลลี่",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M087",prefix:"นาย",name:"เล็ก  ไม่มีนามสกุล",nick:"เล็ก",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M088",prefix:"นาย",name:"วรรณริน บุญมาดี",nick:"เค",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M089",prefix:"นาย",name:"ศิวัช โคสินธ์",nick:"วัฒ",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M090",prefix:"นาย",name:"หนึ่ง",nick:"หนึ่ง",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M091",prefix:"นาย",name:"หาญ  หาโอกาส",nick:"หาญ",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M092",prefix:"นาย",name:"แอ้มู",nick:"แอ้มู",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
+{id:"M093",prefix:"นาย",name:"โอดี  หาโอกาส",nick:"โอดี",status:"สช.",unit:"หน่วยภูมิศาสตร์",care:"แคร์ ภูมิศาสตร์ เมือง",district:"อ.เมือง"},
 {id:"M094",prefix:"นาง",name:"สุภ้สตรา จูมงคล",nick:"โอ์",status:"พล.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.บ้านโป่ง"},
 {id:"M095",prefix:"นาง",name:"ธนกร สนเปี่ยม",nick:"เชอรี่",status:"หนค.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.เมือง"},
 {id:"M096",prefix:"นางสาว",name:"นภ้สอร เทียนเฮง",nick:"หนู",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.บ้านโป่ง"},
 {id:"M097",prefix:"นาย",name:"บุญลือ นาควงษ์",nick:"อ๊อด",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.บ้านโป่ง"},
 {id:"M098",prefix:"นาง",name:"สมพงษ์ คำจันทร์",nick:"แม่ตุ่ม",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.บ้านโป่ง"},
+{id:"M099",prefix:"นางสาว",name:"สุพัฒศิณี ศรีไทย",nick:"ไอซ์",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.บ้านโป่ง"},
+{id:"M100",prefix:"เด็กชาย",name:"เมฆินทร์ คำจันทร์",nick:"ฟอร์ด",status:"คจ.เด็ก",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ บ้านโป่ง",district:"อ.บ้านโป่ง"},
 {id:"M101",prefix:"นาง",name:"ชนัญรัตน์ โพธิ์สนิทศักดิ์",nick:"ก้อน",status:"พล",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
 {id:"M102",prefix:"นาง",name:"สุภ้สตรา จูมงคล",nick:"โอ์",status:"พล.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
 {id:"M103",prefix:"นางสาว",name:"สุพิชญ์นันท์ หอมทอง",nick:"ขวัญเรือน",status:"หนน.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
 {id:"M104",prefix:"นางสาว",name:"บำเพ็ญ จิตเดชขจร",nick:"เพ็ญ",status:"หนค.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
 {id:"M105",prefix:"นาง",name:"สมศรี แดนสว่าง",nick:"พี่จี้",status:"หนค.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M106",prefix:"นางสาว",name:"ขวัญเรือน เต็มวงษ์",nick:"รูธ",status:"พล.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M107",prefix:"นาย",name:"เศรษฐภัทร์ ขันสมาน",nick:"พี่ศักดิ์",status:"พล.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M108",prefix:"นาย",name:"อดิศร หนูอินทร์",nick:"กอล์ฟ",status:"พล.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M109",prefix:"นาง",name:"กัญญาณัฐ แป้งหอม",nick:"K. โบว์/อ้อย",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M110",prefix:"นาง",name:"จริยา ตันติไพบูลย์กุล",nick:"อี้ง้อ",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M111",prefix:"นาย",name:"จันที เมืองน้อย",nick:"ตาอู๊ด",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M112",prefix:"นางสาว",name:"นภ้สอร เทียนเฮง",nick:"หนู",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M113",prefix:"นาง",name:"นิตยา ศาลิกร",nick:"เหมียว",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M114",prefix:"นางสาว",name:"บานเย็น วงศ์ทอง",nick:"ตาร์",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M115",prefix:"นาย",name:"บุญลือ นาควงษ์",nick:"อ๊อด",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M116",prefix:"นาง",name:"พัชรา สืบเสม",nick:"พี่นิด",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M117",prefix:"นาง",name:"มารีย์",nick:"ป้ามารีย์",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M118",prefix:"นาง",name:"รัตนา เกิดหมวก",nick:"พี่นิ่ม",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M119",prefix:"นาง",name:"วนัสนันท์ สืบเสม",nick:"พี่นี",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M120",prefix:"นาง",name:"สปันญ์เนตร พัชรวิภาคกิจ",nick:"พี่เค๋ง",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M121",prefix:"นาง",name:"สมพงษ์ คำจันทร์",nick:"แม่ตุ่ม",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M122",prefix:"นางสาว",name:"สรนันท์ เผือกนิ่ม",nick:"ทราย",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M123",prefix:"นาง",name:"สำลี แดนสว่าง",nick:"แม่สำลี",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M124",prefix:"นาย",name:"สิทธิชัย นาติง",nick:"นิ่ม",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M125",prefix:"นางสาว",name:"สุพัฒศิณี ศรีไทย",nick:"ไอซ์",status:"สช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M126",prefix:"นาย",name:"ณัชค์สฮิม พัชรวิภาคกิจ",nick:"พี่วัช",status:"ผช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M127",prefix:"นาย",name:"มงคล แดนสว่าง",nick:"ตั้ม",status:"ผช.",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M128",prefix:"เด็กชาย",name:"กันต์พงศ์ หนูอินทร์",nick:"เก้า",status:"คจ.เด็ก",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M129",prefix:"เด็กหญิง",name:"ชลธิชา กลิ่นมาก",nick:"เนย",status:"คจ.เด็ก",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
+{id:"M130",prefix:"เด็กชาย",name:"เมฆินทร์ คำจันทร์",nick:"ฟอร์ด",status:"คจ.เด็ก",unit:"หน่วยซีเนียร์",care:"แคร์ ซีเนียร์ เมือง",district:"อ.เมือง"},
 {id:"M131",prefix:"นาย",name:"กฤตภาส ปักษ์ชัยภูมิ",nick:"กิจการ",status:"หนน.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
 {id:"M132",prefix:"น.ส.",name:"ชมพู่ พรพิทัก์พงศ์",nick:"ชมพู่",status:"หนค.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
 {id:"M133",prefix:"น.ส.",name:"สุรีรัตน์ วิจัยรินทร์",nick:"แตน",status:"หนค.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
 {id:"M134",prefix:"นาย",name:"ธิติธาม เกิดชื่น",nick:"อาร์ม",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
 {id:"M135",prefix:"นาย",name:"นิภัทร เรือนใจดี",nick:"เกาะ",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M136",prefix:"น.ส.",name:"แพรวา มีชัย",nick:"แพรวา",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M137",prefix:"น.ส.",name:"รดา ทอง",nick:"ดา",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M138",prefix:"นาย",name:"ธรินทร์วรัช คุ้งลึงค์",nick:"พอส",status:"สช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M139",prefix:"นาย",name:"นพพร ไมเลา",nick:"นพ",status:"สช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M140",prefix:"น.ส.",name:"มูมู มูมู บุญดี",nick:"โม",status:"สช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M141",prefix:"นาย",name:"สิริไชย ไชยครุธ",nick:"ต้อง",status:"สช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M142",prefix:"น.ส.",name:"จิราพร ศรัทธาผล",nick:"มิ้น (แพรวา)",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M143",prefix:"น.ส.",name:"ธารารัตน์ จันทร์อุปถัมภ์",nick:"ณัฐ",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M144",prefix:"น.ส.",name:"นฤมล แจ่มแสง",nick:"ขนุน",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M145",prefix:"น.ส.",name:"มีนา สังขพัฒนา",nick:"มีนา",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M146",prefix:"น.ส.",name:"รัศมี ดูแบบ",nick:"ปอ",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M147",prefix:"น.ส.",name:"สิริยากร ชูเล็ก",nick:"กุ้งกิ้ง",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
+{id:"M148",prefix:"นาย",name:"อภิรักษ์ พอดี",nick:"บอย",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน จอมบึง",district:"อ.จอมบึง"},
 {id:"M149",prefix:"น.ส.",name:"มารีญา บุญช่วย",nick:"ปอ",status:"หนค.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
 {id:"M150",prefix:"น.ส.",name:"วัลลี โคสินธิ์",nick:"เอสเธอร์",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
 {id:"M151",prefix:"น.ส.",name:"อิศรา ทุบะ",nick:"แป้ง",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
 {id:"M152",prefix:"นาย",name:"กิตติพันธ์ อีสู",nick:"บอล",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
 {id:"M153",prefix:"นาย",name:"กิตติ วชิระ",nick:"ดาวิด",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M154",prefix:"น.ส.",name:"แก้ว มุ้ย",nick:"แก้ว",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M155",prefix:"นาย",name:"ดรณ์ ตาพู",nick:"ดรณ์",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M156",prefix:"นาย",name:"ทายา สุวรรณภาษา",nick:"ทายา",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M157",prefix:"นาย",name:"พอเพียง -",nick:"พอเพียง",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M158",prefix:"นาย",name:"พัชราภา -",nick:"พัช",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M159",prefix:"น.ส.",name:"ยลดา กลาโท",nick:"ยล",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M160",prefix:"น.ส.",name:"เยาวเรศ -",nick:"แยม",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M161",prefix:"นาย",name:"ศุภชัย ชายา",nick:"กร",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M162",prefix:"น.ส.",name:"สวย ปาอู",nick:"ดาว",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M163",prefix:"น.ส.",name:"สุรีย์ -",nick:"สุ",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M164",prefix:"นาย",name:"อาบีเอล บุญเชิญ",nick:"ใบเบิ้ล",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
+{id:"M165",prefix:"น.ส.",name:"แอ้ลีชาพอ -",nick:"แอ้",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน โพธาราม",district:"อ.โพธาราม"},
 {id:"M166",prefix:"น.ส.",name:"นางสาวนุตา วงษ์ทอง",nick:"กาโตะ",status:"หนค.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
 {id:"M167",prefix:"น.ส.",name:"นางสาวภูริชญา อำไพศรี",nick:"แนน",status:"หนค.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
 {id:"M168",prefix:"น.ส.",name:"นางสาวคุณัชญา บาง",nick:"ตาล",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
 {id:"M169",prefix:"น.ส.",name:"นางสาวธิติกาญจน์ อุดมสุข",nick:"เหมย",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
-{id:"M170",prefix:"นาย",name:"นางสาวพัชรินทร์ หอมสุด",nick:"เจนนิส",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"}
+{id:"M170",prefix:"นาย",name:"นางสาวพัชรินทร์ หอมสุด",nick:"เจนนิส",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
+{id:"M171",prefix:"นาย",name:"นายวสุพล สนเปี่ยม",nick:"ม่อน",status:"พล.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
+{id:"M172",prefix:"นาย",name:"เด็กชายวิริยะ มะลิคง",nick:"เกล้า",status:"สช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
+{id:"M173",prefix:"นาย",name:"เด็กหญิงเปรมิกา บุญทอง",nick:"ป๊อปปี้",status:"สช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
+{id:"M174",prefix:"นาย",name:"เด็กชายอักษรินทร์ บัวเอี่ยม",nick:"ออม",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
+{id:"M175",prefix:"น.ส.",name:"นางสาวปริณดรา น่วมนา",nick:"คูก้า",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"},
+{id:"M176",prefix:"นาย",name:"นายภัคพงศ์ เกษมศรี",nick:"จ่า",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"}
 ];
     if(churchSession.unit!=='all') churchMembers = churchMembers.filter(m => m.unit === churchSession.unit);
   }
@@ -1542,24 +1844,27 @@ function churchRenderMembersToChecklist() {
 }
 
 // ===== เมื่อเลือกแคร์ในหน้า unit → โหลดรายชื่อสมาชิก =====
+// ฟิลด์ในตาราง: dawn, church, lunch, ppch, david, careAtt, yy, one1, prok, offering
 function churchOnCareChange(sel, unitId) {
   const care = sel.value;
   if(!care) return;
 
-  // หา table ใน page นั้น
   const page = document.getElementById('pg-'+unitId);
   if(!page) return;
   const tbody = page.querySelector('tbody');
   if(!tbody) return;
 
-  // กรองสมาชิกในแคร์นี้
+  // จดจำว่ากำลังแสดงแคร์ไหน (ใช้ตอนกดบันทึก)
+  page.dataset.currentCare = care;
+  page.dataset.currentUnit = (churchSession && churchSession.unit) || '';
+
   const members = churchMembers.filter(m =>
-    m.care === care &&
-    !['สถ.','ผถ.'].includes(m.status)
+    m.care === care && !['สถ.','ผถ.'].includes(m.status)
   );
 
   if(members.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;padding:16px;color:#999">ไม่พบสมาชิกในแคร์นี้</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:16px;color:#999">ไม่พบสมาชิกในแคร์นี้</td></tr>';
+    ensureSaveButton(page, unitId);
     return;
   }
 
@@ -1568,33 +1873,50 @@ function churchOnCareChange(sel, unitId) {
     'สช.':'#E65100','ผช.':'#BF360C','คจ.เด็ก':'#00695C','ผส.':'#6A1B9A'
   };
 
+  // 6 checkboxes: dawn, church, lunch, ppch, david, careAtt
+  // 4 numbers: yy, one1, prok, offering
+  const checkFields = ['dawn','church','lunch','ppch','david','careAtt'];
+  const numFields = ['yy','one1','prok','offering'];
+
   tbody.innerHTML = members.map((m,i) => {
     const sc = STATUS_COLOR[m.status]||'#555';
-    return '<tr style="background:'+(i%2===0?'#FAFAFA':'#fff')+'">' +
+    const mid = m.id||('R'+i);
+    const cks = checkFields.map(f =>
+      '<td style="text-align:center;padding:4px"><span onclick="toggleCk(this)" data-mid="'+mid+'" data-fld="'+f+'" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:2px solid #DDD;border-radius:4px;cursor:pointer;font-size:12px;transition:all .15s" class="ck-act"></span></td>'
+    ).join('');
+    const nums = numFields.map((f,j) =>
+      '<td style="text-align:center;padding:4px"><input type="number" min="0" value="0" data-mid="'+mid+'" data-fld="'+f+'" style="width:'+(f==='offering'?42:38)+'px;text-align:center;border:1px solid '+(f==='offering'?'#880E4F':'#DDD')+';border-radius:4px;padding:2px;font-size:11px'+(f==='offering'?';color:#880E4F;font-weight:bold':'')+'"></td>'
+    ).join('');
+    return '<tr data-mid="'+mid+'" data-nick="'+(m.nick||'').replace(/"/g,'')+'" data-district="'+(m.district||'')+'" style="background:'+(i%2===0?'#FAFAFA':'#fff')+'">' +
       '<td style="text-align:center;padding:6px 4px;color:#999;font-size:11px">'+(i+1)+'</td>' +
       '<td style="padding:6px 8px;font-size:11px">'+(m.prefix||'')+'</td>' +
       '<td style="padding:6px 8px;font-weight:500">'+(m.name||'')+'</td>' +
       '<td style="padding:6px 8px;text-align:center">'+(m.nick||'')+'</td>' +
       '<td style="padding:6px 4px;text-align:center"><span style="background:'+sc+'22;color:'+sc+';padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700">'+(m.status||'')+'</span></td>' +
-      // กิจกรรม checkboxes
-      ['รุ่งอรุณ','รอบหลัก','อาหารเที่ยง','พพช.(บ่าย)','ดาวิด'].map(function(act) {
-        return '<td style="text-align:center;padding:4px"><span onclick="toggleCk(this)" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:2px solid #DDD;border-radius:4px;cursor:pointer;font-size:12px;transition:all .15s" class="ck-act"></span></td>';
-      }).join('') +
-      '<td style="text-align:center;padding:4px"><span onclick="toggleCk(this)" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border:2px solid #4CAF50;border-radius:4px;cursor:pointer;font-size:12px;background:#f1f8e9" class="ck-act"></span></td>' +
-      '<td style="text-align:center;padding:4px"><input type="number" min="0" value="0" style="width:38px;text-align:center;border:1px solid #DDD;border-radius:4px;padding:2px;font-size:11px"></td>' +
-      '<td style="text-align:center;padding:4px"><input type="number" min="0" value="0" style="width:38px;text-align:center;border:1px solid #DDD;border-radius:4px;padding:2px;font-size:11px"></td>' +
-      '<td style="text-align:center;padding:4px"><input type="number" min="0" value="0" style="width:38px;text-align:center;border:1px solid #DDD;border-radius:4px;padding:2px;font-size:11px"></td>' +
-      '<td style="text-align:center;padding:4px"><input type="number" min="0" value="0" style="width:42px;text-align:center;border:1px solid #880E4F;border-radius:4px;padding:2px;font-size:11px;color:#880E4F;font-weight:bold"></td>' +
-    '</tr>';
+      cks + nums + '</tr>';
   }).join('');
 
-  // เพิ่ม style ให้ checkbox เมื่อ checked
   if(!document.getElementById('ck-style')) {
     const style = document.createElement('style');
     style.id = 'ck-style';
     style.textContent = '.ck-on{background:#4CAF50 !important;border-color:#4CAF50 !important;color:#fff !important;}';
     document.head.appendChild(style);
   }
+
+  ensureSaveButton(page, unitId);
+}
+
+// ใส่ปุ่ม "บันทึกเข้า Weekly Log" ใต้ตาราง (เฉพาะหน้าที่ยังไม่มี)
+function ensureSaveButton(page, unitId) {
+  if(page.querySelector('.save-weekly-wrap')) return;
+  const tw = page.querySelector('.tw');
+  if(!tw) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'save-weekly-wrap';
+  wrap.style.cssText = 'display:flex;justify-content:flex-end;gap:10px;padding:10px 14px;background:#fff;border-radius:10px;margin-top:-8px;margin-bottom:14px;box-shadow:0 2px 6px rgba(0,0,0,.05);';
+  wrap.innerHTML =
+    '<button onclick="churchSaveWeekly(\''+unitId+'\')" class="ab" style="background:#1565C0;color:#fff;padding:10px 22px;font-size:13px;border:none;border-radius:8px;cursor:pointer;font-weight:700;box-shadow:0 2px 4px rgba(21,101,192,.3)">💾 บันทึกเข้า Weekly Log</button>';
+  tw.parentNode.insertBefore(wrap, tw.nextSibling);
 }
 
 
@@ -1651,15 +1973,62 @@ async function churchSaveNewPeople(unitId) {
   apiToast('✅ บันทึกคนใหม่ '+people.length+' คนแล้ว','ok');
 }
 
-// ===== WEEKLY: บันทึก checklist =====
-async function churchSaveWeekly(unitId, dateStr) {
-  // ดึงข้อมูล checklist จาก DOM ของหน่วยนั้นๆ
+// ===== WEEKLY: บันทึก checklist เข้า Sheet =====
+async function churchSaveWeekly(unitId) {
+  const page = document.getElementById('pg-'+unitId);
+  if(!page) return apiToast('❌ ไม่พบหน้า','err');
+  const care = page.dataset.currentCare;
+  if(!care) return apiToast('⚠️ กรุณาเลือกแคร์ก่อน','err');
+
+  // หา week select
+  const wkSelMap = {'pro':'pw','geo':'gw','senior':'sw','inst':'iw'};
+  const wkSel = document.getElementById(wkSelMap[unitId]);
+  const dateStr = wkSel ? wkSel.value : '';
+  if(!dateStr) return apiToast('⚠️ กรุณาเลือกสัปดาห์','err');
+
+  const unit = page.dataset.currentUnit || (churchSession && churchSession.unit) || '';
+  const trs = page.querySelectorAll('tbody tr[data-mid]');
+  if(!trs.length) return apiToast('⚠️ ไม่มีข้อมูลให้บันทึก','err');
+
+  // รวมค่าจากทุกแถว
+  const rows = [];
+  trs.forEach(tr => {
+    const mid = tr.dataset.mid;
+    const nick = tr.dataset.nick || '';
+    const district = tr.dataset.district || '';
+    const row = {date:dateStr, id:mid, nick, care, unit, district,
+      dawn:'',church:'',careAtt:'',lunch:'',ppch:'',david:'',
+      yy:0,one1:0,prok:0,offering:0};
+    tr.querySelectorAll('.ck-act').forEach(ck => {
+      const f = ck.dataset.fld;
+      if(f && ck.classList.contains('ck-on')) row[f] = '✓';
+    });
+    tr.querySelectorAll('input[type="number"]').forEach(inp => {
+      const f = inp.dataset.fld;
+      if(f) row[f] = parseInt(inp.value)||0;
+    });
+    // เก็บเฉพาะแถวที่มีการกรอกอะไรบางอย่าง
+    const hasData = row.dawn||row.church||row.careAtt||row.lunch||row.ppch||row.david||row.yy||row.one1||row.prok||row.offering;
+    if(hasData) rows.push(row);
+  });
+
+  if(!rows.length) return apiToast('⚠️ ยังไม่ได้ติ๊ก/กรอกอะไรเลย','err');
+
+  if(!confirm('ยืนยันบันทึก '+rows.length+' แถว เข้า Weekly Log\nสัปดาห์: '+dateStr+'\nแคร์: '+care+' ?')) return;
+
   showLoading(true);
   try {
-    // collect checkbox data (integration point — ขยายได้)
-    apiToast('✅ บันทึกข้อมูลประจำสัปดาห์แล้ว','ok');
-  } catch(e){
-    apiToast('❌ บันทึกไม่สำเร็จ','err');
+    const r = await fetch(CHURCH_API, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action:'saveWeekly', token:(churchSession&&churchSession.token)||'', rows})
+    });
+    const d = await r.json();
+    if(d.ok) apiToast('✅ บันทึก '+d.saved+' แถวเข้า Sheet สำเร็จ','ok');
+    else throw new Error(d.error||'unknown');
+  } catch(e) {
+    console.error('saveWeekly:', e);
+    apiToast('❌ บันทึกไม่สำเร็จ: '+e.message+' (ดูคอนโซลสำหรับรายละเอียด)','err');
   }
   showLoading(false);
 }
@@ -1676,14 +2045,27 @@ function apiToast(msg,type){
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', function() {
-  churchSession = null;
-  // Force show login overlay
-  var overlay = document.getElementById('login-overlay');
-  if(overlay) {
-    overlay.style.cssText = 'display:flex !important;';
-  }
   var mtb = document.getElementById('main-tab-bar');
   if(mtb) mtb.style.display = 'none';
+  // ลองกู้ session จาก localStorage ก่อน — ถ้ามี ไม่ต้องล็อกอินใหม่
+  var restored = false;
+  try {
+    var s = localStorage.getItem('church_sess');
+    if(s) {
+      churchSession = JSON.parse(s);
+      if(churchSession && churchSession.unit) {
+        var overlay = document.getElementById('login-overlay');
+        if(overlay) overlay.style.cssText = 'display:none !important;';
+        afterLogin();
+        restored = true;
+      }
+    }
+  } catch(e){ console.warn('session restore failed:',e); }
+  if(!restored) {
+    churchSession = null;
+    var overlay = document.getElementById('login-overlay');
+    if(overlay) overlay.style.cssText = 'display:flex !important;';
+  }
 });
 
 </script>
