@@ -579,12 +579,9 @@ tbody td.L{text-align:left;padding-left:10px;}
       </select>
     </div>
     <div class="cg">
-      <label>&#128337; เลือกช่วง</label>
-      <select class="db-sel-sm" id="db-range" onchange="renderDash()">
-        <option>04/05/2568</option>
-        <option>11/05/2568</option>
-        <option>18/05/2568</option>
-        <option>25/05/2568</option>
+      <label>&#128337; เลือกช่วง (วันอาทิตย์)</label>
+      <select class="db-sel-sm" id="db-range" onchange="onDashWeekChange()">
+        <!-- จะถูกเติมโดย JS แบบ dynamic 12 อาทิตย์ล่าสุด -->
       </select>
     </div>
   </div>
@@ -782,7 +779,26 @@ const DEMO = {
   trend:[0,0,0,0,0,0,0]
 };
 
+function ensureDashWeekOptions(){
+  const sel = document.getElementById('db-range');
+  if(!sel || sel.options.length) return;  // เติมแค่ครั้งแรก
+  const TH_M=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const weeks = [];
+  let d = new Date(); d.setDate(d.getDate()-((d.getDay()+7)%7));
+  for(let i=0;i<12;i++){
+    const dd=String(d.getDate()).padStart(2,'0');
+    const mm=String(d.getMonth()+1).padStart(2,'0');
+    const yy=d.getFullYear()+543;
+    const val = dd+'/'+mm+'/'+yy;
+    const lab = d.getDate()+' '+TH_M[d.getMonth()].substring(0,3)+' '+yy+(i===0?' (สัปดาห์นี้)':'');
+    weeks.push({val,lab});
+    d.setDate(d.getDate()-7);
+  }
+  sel.innerHTML = weeks.map((w,i)=>'<option value="'+w.val+'"'+(i===0?' selected':'')+'>'+w.lab+'</option>').join('');
+}
+
 function renderDash(){
+  ensureDashWeekOptions();
   const view = document.getElementById("db-view").value;
   const period = document.getElementById("db-period").value;
   const content = document.getElementById("dash-content");
@@ -1262,16 +1278,19 @@ function drawTrendLine(){
 function drawActBars(){
   const el = document.getElementById("act-bars");
   if(!el) return;
+  // ดึงค่ามาจาก DEMO.province ที่ถูก aggregate มาจาก WEEKLY_LOG จริง
+  const pv = DEMO.province || {};
+  const a = pv.activities || {};
   const acts = [
-    {label:"รุ่งอรุณ",     val:55, color:"#E65100"},
-    {label:"รอบหลัก",      val:97, color:"#BF360C"},
-    {label:"อาหารเที่ยง",  val:28, color:"#004D40"},
-    {label:"พพช.(บ่าย)",   val:40, color:"#827717"},
-    {label:"ดาวิด",        val:35, color:"#1A237E"},
-    {label:"แคร์",         val:77, color:"#2E7D32"},
-    {label:"เยี่ยมเยียน",  val:42, color:"#1565C0"},
-    {label:"ใช้เวลา 1:1",  val:18, color:"#6A1B9A"},
-    {label:"ประกาศ",       val:12, color:"#37474F"},
+    {label:"รุ่งอรุณ",     val:a.dawn||0,         color:"#E65100"},
+    {label:"รอบหลัก",      val:pv.church_total||0,color:"#BF360C"},
+    {label:"อาหารเที่ยง",  val:a.lunch||0,        color:"#004D40"},
+    {label:"พพช.(บ่าย)",   val:a.ppch||0,         color:"#827717"},
+    {label:"ดาวิด",        val:a.david||0,        color:"#1A237E"},
+    {label:"แคร์",         val:pv.care_total||0,  color:"#2E7D32"},
+    {label:"เยี่ยมเยียน",  val:a.yy||0,           color:"#1565C0"},
+    {label:"ใช้เวลา 1:1",  val:a.one1||0,         color:"#6A1B9A"},
+    {label:"ประกาศ",       val:a.announce||0,     color:"#37474F"},
   ];
   const maxA = Math.max(...acts.map(a=>a.val));
   el.innerHTML = acts.map(a=>`
@@ -1377,13 +1396,11 @@ function loDoLogin() {
 }
 function loDoLogout() {
   if(!confirm('ออกจากระบบ?')) return;
-  churchSession=null; localStorage.removeItem('church_sess');
-  document.getElementById('login-overlay').style.cssText='display:flex !important;';
-  document.getElementById('session-info').style.display='none';
-  const mtb2=document.getElementById('main-tab-bar');if(mtb2)mtb2.style.display='none';
-  document.getElementById('lo-pw').value='';
-  document.querySelectorAll('.lo-unit-btn').forEach(b=>b.classList.remove('selected'));
-  loSelectedUnit='';
+  // เคลียร์ทุกอย่างแล้วรีโหลดหน้า — กันสถานะเก่าค้าง
+  try { localStorage.removeItem('church_sess'); } catch(e){}
+  churchSession = null;
+  // รีโหลดหน้า — จะกลับไปหน้าล็อกอินสะอาดเอี่ยม
+  window.location.reload();
 }
 function loRestoreSession() {
   const s=localStorage.getItem('church_sess');
@@ -1459,8 +1476,9 @@ function computeMemberCounts() {
   });
   // นับผู้ใหญ่ (ตัด สถ./ผถ. ออก)
   (churchMembers||[]).forEach(m => {
-    if(['สถ.','ผถ.'].includes(m.status)) return;
-    const isInterested = m.status === 'ผส.';
+    const ns = normalizeStatus(m.status);
+    if(['สถ.','ผถ.'].includes(ns)) return;
+    const isInterested = ns === 'ผส.';
     if(DEMO.byUnit[m.unit]) {
       DEMO.byUnit[m.unit].members++;
       if(isInterested) DEMO.byUnit[m.unit].interested++;
@@ -1516,6 +1534,15 @@ async function churchLoadAll() {
   // re-render dashboard ถ้ามี
   if(document.getElementById('dash-content')) renderDash();
   showLoading(false);
+}
+
+// เมื่อเปลี่ยน "เลือกช่วง" → คำนวณใหม่ตามอาทิตย์ที่เลือก แล้ว render
+function onDashWeekChange(){
+  // re-aggregate ใหม่ตาม dateStr ที่เลือก
+  const sel = document.getElementById('db-range');
+  if(!sel) return;
+  aggregateForWeek(sel.value);
+  renderDash();
 }
 
 // ปุ่ม Refresh — ผู้ใช้กดเพื่อดึงข้อมูลล่าสุดจากชีต
@@ -1603,9 +1630,10 @@ async function churchLoadNewPeople() {
   } catch(e){ churchNewPeople = []; }
 }
 
-// คำนวณยอดประจำสัปดาห์จาก weekly rows (เฉพาะ Sunday ล่าสุด)
-function aggregateThisWeek() {
-  const wkStr = thaiWeekDate();
+// คำนวณยอดประจำสัปดาห์ (default = Sunday ล่าสุด)
+function aggregateThisWeek() { aggregateForWeek(thaiWeekDate()); }
+function aggregateForWeek(wkStr) {
+  if(!wkStr) wkStr = thaiWeekDate();
   // เคลียร์ตัวเลข weekly แต่คงค่า members ไว้
   Object.values(DEMO.byUnit).forEach(u=>{u.church=0;u.care=0;u.mini=0;u.new_int=0;u.new_bel=0;});
   Object.values(DEMO.byUnitCares).forEach(unit=>{
@@ -1893,6 +1921,8 @@ async function churchLoadMembers() {
 {id:"M176",prefix:"นาย",name:"นายภัคพงศ์ เกษมศรี",nick:"จ่า",status:"ผช.",unit:"หน่วยสถาบัน",care:"แคร์ สถาบัน เมือง",district:"อ.เมือง"}
 ];
     if(churchSession.unit!=='all') churchMembers = churchMembers.filter(m => m.unit === churchSession.unit);
+    // normalize status ในข้อมูล fallback ด้วย
+    churchMembers = churchMembers.map(m => ({...m, status: normalizeStatus(m.status)}));
   }
 }
 
@@ -1979,10 +2009,16 @@ function churchOnCareChange(sel, unitId) {
   page.dataset.currentUnit = (churchSession && churchSession.unit) || '';
 
   // แยกสมาชิกในแคร์: ผู้ใหญ่ (ไม่ใช่ ผส., สถ., ผถ.) vs ผู้สนใจ ผส.
-  const inCare = (churchMembers||[]).filter(m => m.care === care && !['สถ.','ผถ.'].includes(m.status));
+  const inCare = (churchMembers||[]).filter(m => {
+    const ns = normalizeStatus(m.status);
+    return m.care === care && !['สถ.','ผถ.'].includes(ns);
+  });
   // ตัด คจ.เด็ก ออกจากตารางผู้ใหญ่ (ไปอยู่ตารางเด็ก) และ ผส. ไปอยู่ตารางคนใหม่
-  const adults = inCare.filter(m => m.status !== 'ผส.' && m.status !== 'คจ.เด็ก');
-  const interested = inCare.filter(m => m.status === 'ผส.');
+  const adults = inCare.filter(m => {
+    const ns = normalizeStatus(m.status);
+    return ns !== 'ผส.' && ns !== 'คจ.เด็ก';
+  });
+  const interested = inCare.filter(m => normalizeStatus(m.status) === 'ผส.');
   // เรียงตามลำดับสถานะ
   adults.sort((a,b)=> statusRank(a.status) - statusRank(b.status));
 
@@ -2012,7 +2048,8 @@ const STATUS_COLOR = {
 };
 
 function renderMemberRow(m, i) {
-  const sc = STATUS_COLOR[m.status]||'#555';
+  const ns = normalizeStatus(m.status);
+  const sc = STATUS_COLOR[ns]||'#555';
   const mid = m.id||('R'+i);
   const checkFields = ['dawn','church','lunch','ppch','david','careAtt'];
   const numFields = ['yy','one1','prok','offering'];
@@ -2027,7 +2064,7 @@ function renderMemberRow(m, i) {
     '<td style="padding:6px 8px;font-size:11px">'+(m.prefix||'')+'</td>' +
     '<td style="padding:6px 8px;font-weight:500">'+(m.name||'')+'</td>' +
     '<td style="padding:6px 8px;text-align:center">'+(m.nick||'')+'</td>' +
-    '<td style="padding:6px 4px;text-align:center"><span style="background:'+sc+'22;color:'+sc+';padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700">'+(m.status||'')+'</span></td>' +
+    '<td style="padding:6px 4px;text-align:center"><span style="background:'+sc+'22;color:'+sc+';padding:2px 6px;border-radius:8px;font-size:10px;font-weight:700">'+(ns||m.status||'')+'</span></td>' +
     cks + nums + '</tr>';
 }
 
@@ -2288,7 +2325,7 @@ document.addEventListener('DOMContentLoaded', function() {
   } catch(e){ console.warn('session restore failed:',e); }
   if(!restored) {
     churchSession = null;
-    var overlay = document.getElementById('login-overlay');
+  var overlay = document.getElementById('login-overlay');
     if(overlay) overlay.style.cssText = 'display:flex !important;';
   }
 });
