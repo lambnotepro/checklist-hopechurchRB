@@ -907,9 +907,9 @@ function churchFillCareDropdowns() {
   Object.entries(unitMap).forEach(([selId, unit]) => {
     const sel = document.getElementById(selId);
     if(!sel) return;
-    const myCares = (churchCares||[]).filter(c => c.unit === unit);
+    const myCares = (churchCares||[]).filter(c => (c.unit||'').trim() === unit);
     sel.innerHTML = '<option value="">-- เลือกแคร์ --</option>' +
-      myCares.map(c => '<option value="'+c.name+'">'+c.name+'</option>').join('');
+      myCares.map(c => '<option value="'+(c.name||'').trim()+'">'+(c.name||'').trim()+'</option>').join('');
   });
 }
 
@@ -1139,14 +1139,6 @@ function renderView1(wk) {
       </div>
     </div>`;
 
-  const special = `<div class="dv2-special-wrap">
-    <div class="dv2-special-title">🌱 คนใหม่สัปดาห์นี้</div>
-    <div class="dv2-special">
-      <div class="dv2-special-h">🟠 ผู้สนใจ ${pv.new_interest} · 🟢 รับเชื่อ ${pv.new_believe} · 🟣 เยี่ยมพิเศษ ${pv.new_special}</div>
-      <div class="dv2-special-row">รวมทั้งหมด ${pv.new_interest + pv.new_believe + pv.new_special} คน</div>
-    </div>
-  </div>`;
-
   const counts = computeMemberCounts();
   const rosterSection = `<div class="dv2-card">
     <div class="dv2-card-h">👥 รายชื่อสมาชิกทั้งหมด <span class="pill">${counts.total} คน</span></div>
@@ -1157,16 +1149,126 @@ function renderView1(wk) {
     </div>
   </div>`;
 
-  // donut, perUnit, compare, grid
-  const donut = '';
-  const perUnit = '';
-  const compare = '';
-  const grid = '';
+  // [v5] กิจกรรมสัปดาห์นี้ — 5 ช่อง
+  const numKids = (churchWeeklyRows||[]).filter(r => {
+    if(normalizeDateStr(r.date) !== wk.trim()) return false;
+    if(!(String(r.id||'').startsWith('K') || r.care === 'คจ.เด็ก')) return false;
+    return r.church === '✓' || r.careAtt === '✓';   // เด็กที่มาอย่างใดอย่างหนึ่ง
+  }).length;
+  const activities = `<div class="dv2-card">
+    <div class="dv2-card-h">🌱 กิจกรรมสัปดาห์นี้</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+      <div class="dv2-stat" style="padding:14px 8px"><div class="ic">🟠</div><div class="num" style="color:#F2A93B">${pv.new_interest}</div><div class="lab" style="font-size:11px">ผู้สนใจ</div></div>
+      <div class="dv2-stat" style="padding:14px 8px"><div class="ic">🟢</div><div class="num" style="color:#2E7D32">${pv.new_believe}</div><div class="lab" style="font-size:11px">รับเชื่อ</div></div>
+      <div class="dv2-stat" style="padding:14px 8px"><div class="ic">🟣</div><div class="num" style="color:#7B1FA2">${pv.new_special}</div><div class="lab" style="font-size:11px">เยี่ยมพิเศษ</div></div>
+      <div class="dv2-stat" style="padding:14px 8px"><div class="ic">👧</div><div class="num" style="color:#00695C">${numKids}</div><div class="lab" style="font-size:11px">คจ.เด็ก</div></div>
+      <div class="dv2-stat" style="padding:14px 8px"><div class="ic">🌅</div><div class="num" style="color:#827717">${pv.activities.ppch||0}</div><div class="lab" style="font-size:11px">พพช.</div></div>
+    </div>
+  </div>`;
+
+  // [v5] Donut สัดส่วนสมาชิกแต่ละหน่วย
+  const donut = renderUnitDonut();
+
+  // [v5] ตารางเปรียบเทียบ มาแคร์ vs มาโบสถ์ รายหน่วย
+  const compare = renderUnitCompare();
 
   const newPpl = renderNewPeopleTable();
   const momentum = renderMomentumCard();
 
-  return `<div class="dv2">${hero}${special}${rosterSection}${donut}${perUnit}${compare}${grid}${momentum}${newPpl}</div>`;
+  return `<div class="dv2">${hero}${rosterSection}${activities}${donut}${compare}${momentum}${newPpl}</div>`;
+}
+
+// [v5] Donut chart — สัดส่วนสมาชิกแต่ละหน่วย
+function renderUnitDonut() {
+  const UNIT_COLOR = {
+    'หน่วย Pro':'#1565C0',
+    'หน่วยภูมิศาสตร์':'#2E7D32',
+    'หน่วยซีเนียร์':'#6A1B9A',
+    'หน่วยสถาบัน':'#BF360C'
+  };
+  const entries = Object.entries(DEMO.byUnit).filter(([n,u]) => u.members > 0);
+  const total = entries.reduce((s, [n,u]) => s + u.members, 0);
+  if(total === 0) return '';
+
+  // สร้าง SVG arcs
+  const cx=60, cy=60, r=46, ir=28;
+  let startAngle = -Math.PI/2;
+  const arcs = entries.map(([name, u]) => {
+    const pct = u.members / total;
+    const angle = pct * 2 * Math.PI;
+    const endAngle = startAngle + angle;
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle);
+    const y2 = cy + r * Math.sin(endAngle);
+    const x3 = cx + ir * Math.cos(endAngle);
+    const y3 = cy + ir * Math.sin(endAngle);
+    const x4 = cx + ir * Math.cos(startAngle);
+    const y4 = cy + ir * Math.sin(startAngle);
+    const largeArc = angle > Math.PI ? 1 : 0;
+    const color = UNIT_COLOR[name] || '#999';
+    const path = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} L ${x3} ${y3} A ${ir} ${ir} 0 ${largeArc} 0 ${x4} ${y4} Z`;
+    startAngle = endAngle;
+    return `<path d="${path}" fill="${color}"/>`;
+  }).join('');
+
+  const legend = entries.map(([name, u]) => {
+    const pct = (u.members/total*100).toFixed(1);
+    const color = UNIT_COLOR[name] || '#999';
+    return `<div class="ln">
+      <span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${color}"></span>
+      <span style="flex:1;font-weight:600">${name}</span>
+      <span class="nu">${u.members}</span>
+      <span class="pc">(${pct}%)</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="dv2-card">
+    <div class="dv2-card-h">🥧 สัดส่วนสมาชิกแต่ละหน่วย <span class="pill">${total} คน</span></div>
+    <div class="dv2-donut-wrap">
+      <svg class="dv2-donut-svg" viewBox="0 0 120 120">
+        ${arcs}
+        <text x="60" y="58" class="dv2-donut-center" text-anchor="middle">${total}</text>
+        <text x="60" y="72" class="dv2-donut-sub" text-anchor="middle">รวมทั้งหมด</text>
+      </svg>
+      <div class="dv2-donut-legend">${legend}</div>
+    </div>
+  </div>`;
+}
+
+// [v5] ตารางเปรียบเทียบ มาแคร์ vs โบสถ์ รายหน่วย
+function renderUnitCompare() {
+  const UNIT_COLOR = {
+    'หน่วย Pro':'#1565C0','หน่วยภูมิศาสตร์':'#2E7D32',
+    'หน่วยซีเนียร์':'#6A1B9A','หน่วยสถาบัน':'#BF360C'
+  };
+  const entries = Object.entries(DEMO.byUnit).filter(([n,u]) => u.members > 0);
+  const maxVal = Math.max(1, ...entries.flatMap(([n,u]) => [u.church, u.care]));
+
+  const rows = entries.map(([name, u]) => {
+    const color = UNIT_COLOR[name] || '#666';
+    const churchW = (u.church/maxVal*100).toFixed(0);
+    const careW = (u.care/maxVal*100).toFixed(0);
+    return `<div class="dv2-cmp-row">
+      <div class="dv2-cmp-head">
+        <span class="name" style="color:${color}">${name}</span>
+        <span class="v1">${u.care}</span>
+        <span class="slash">/</span>
+        <span class="v2">${u.church}</span>
+      </div>
+      <div class="dv2-bar"><div class="dv2-bar-fill o" style="width:${careW}%"></div></div>
+      <div class="dv2-bar"><div class="dv2-bar-fill b" style="width:${churchW}%"></div></div>
+    </div>`;
+  }).join('');
+
+  return `<div class="dv2-card">
+    <div class="dv2-card-h">📊 เปรียบเทียบ มาแคร์ vs มาโบสถ์ (รายหน่วย)</div>
+    ${rows}
+    <div class="dv2-legend">
+      <span><span class="dot" style="background:#F2A93B"></span>มาแคร์</span>
+      <span><span class="dot" style="background:#5BA9EF"></span>มาโบสถ์</span>
+    </div>
+  </div>`;
 }
 
 function computeMemberCounts() {
@@ -1203,48 +1305,131 @@ function renderNewPeopleTable() {
 }
 
 function renderView2(wk) {
-  // แยกอำเภอ
-  const pv = DEMO.province;
+  // [v5] แยกอำเภอ — แตกหน่วยย่อยใน card
   let html = `<div class="dv2">
     <div class="dv2-hero">
       <div class="dv2-hero-label">อาทิตย์ที่ ${wk}</div>
       <div class="dv2-hero-date">แยกตามอำเภอ</div>
+      <div class="dv2-hero-sub">แสดงผลย่อยรายหน่วยในแต่ละอำเภอ</div>
     </div>
     <div class="district-grid">`;
+
+  // หาหน่วยที่อยู่ในแต่ละอำเภอ
+  const districtToUnits = {};  // {district: {unit: {church, care, mini, offering, members}}}
+  Object.entries(DEMO.byCare).forEach(([careName, c]) => {
+    if(!c.district) return;
+    if(!districtToUnits[c.district]) districtToUnits[c.district] = {};
+    if(!districtToUnits[c.district][c.unit]) {
+      districtToUnits[c.district][c.unit] = {church:0, care:0, mini:0, offering:0, members:0};
+    }
+    districtToUnits[c.district][c.unit].church += c.church;
+    districtToUnits[c.district][c.unit].care += c.care;
+    districtToUnits[c.district][c.unit].mini += c.mini;
+    districtToUnits[c.district][c.unit].members += c.members;
+  });
+  // เพิ่ม offering จาก byUnitCares
+  Object.entries(DEMO.byUnitCares).forEach(([unitName, u]) => {
+    Object.entries(u.cares).forEach(([careName, c]) => {
+      const careObj = (churchCares||[]).find(cc => cc.name === careName);
+      const district = careObj ? careObj.district : '';
+      if(district && districtToUnits[district] && districtToUnits[district][unitName]) {
+        districtToUnits[district][unitName].offering = (districtToUnits[district][unitName].offering || 0) + (c.offering||0);
+      }
+    });
+  });
+
   Object.entries(DEMO.byDistrict).forEach(([name, d]) => {
+    const unitsInDist = districtToUnits[name] || {};
+    let unitRows = '';
+    Object.entries(unitsInDist).forEach(([uname, ud]) => {
+      const color = {
+        'หน่วย Pro':'#1565C0','หน่วยภูมิศาสตร์':'#2E7D32',
+        'หน่วยซีเนียร์':'#6A1B9A','หน่วยสถาบัน':'#BF360C'
+      }[uname] || '#666';
+      unitRows += `<div style="border-top:1px solid #EEE;padding:8px 0;">
+        <div style="font-size:11px;font-weight:700;color:${color};margin-bottom:4px">${uname} (${ud.members} คน)</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px;">
+          <div><span style="color:#999">โบสถ์</span> <b style="color:#2E7D32">${ud.church}</b></div>
+          <div><span style="color:#999">แคร์</span> <b style="color:#F2A93B">${ud.care}</b></div>
+          <div><span style="color:#999">มินิ</span> <b style="color:#6A1B9A">${ud.mini}</b></div>
+        </div>
+      </div>`;
+    });
     html += `<div class="district-card">
       <div class="district-header" style="background:#1565C0">${name} (${d.members} คน)</div>
       <div class="district-body">
-        <div class="district-row"><span class="dr-label">มาโบสถ์</span><span class="dr-val">${d.church}</span></div>
-        <div class="district-row"><span class="dr-label">มาแคร์</span><span class="dr-val">${d.care}</span></div>
-        <div class="district-row"><span class="dr-label">มินิเซิ้ต</span><span class="dr-val">${d.mini}</span></div>
-        <div class="district-row"><span class="dr-label">ถวาย</span><span class="dr-val">฿${d.offering.toLocaleString()}</span></div>
+        <div class="district-row"><span class="dr-label">มาโบสถ์รวม</span><span class="dr-val">${d.church}</span></div>
+        <div class="district-row"><span class="dr-label">มาแคร์รวม</span><span class="dr-val">${d.care}</span></div>
+        <div class="district-row"><span class="dr-label">มินิเซิ้ตรวม</span><span class="dr-val">${d.mini}</span></div>
+        <div class="district-row"><span class="dr-label">ถวายรวม</span><span class="dr-val">฿${d.offering.toLocaleString()}</span></div>
+        ${unitRows}
       </div>
     </div>`;
   });
-  html += `</div>${renderMomentumCard()}</div>`;
+  html += `</div></div>`;
   return html;
 }
 
 function renderView3(wk) {
-  // แยกหน่วย
+  // [v5] แยกหน่วย — เพิ่มแถวเด็กแยก
+  // นับเด็กในแต่ละหน่วยจาก WEEKLY_LOG (kids ที่ care="คจ.เด็ก", unit=ชื่อแคร์)
+  // → map ไปยังหน่วยใหญ่ผ่าน churchCares
+  const kidsByBigUnit = {};
+  Object.keys(DEMO.byUnit).forEach(u => kidsByBigUnit[u] = {church:0, care:0, mini:0, members:0});
+  // นับเด็กที่เป็นสมาชิก (จาก churchKids)
+  (churchKids||[]).forEach(k => {
+    const careObj = (churchCares||[]).find(c => c.name === (k.care||'').trim());
+    if(careObj && kidsByBigUnit[careObj.unit]) kidsByBigUnit[careObj.unit].members++;
+  });
+  // นับ ✓ จาก WEEKLY_LOG
+  const wkNorm = wk.trim();
+  const tick = v => v === '✓' || v === true || v === 'TRUE' || v === 'true' || v === 1;
+  (churchWeeklyRows||[]).forEach(r => {
+    if(normalizeDateStr(r.date) !== wkNorm) return;
+    const isKid = String(r.id||'').startsWith('K') || r.care === 'คจ.เด็ก';
+    if(!isKid) return;
+    const parentCare = (r.unit||'').trim();
+    const careObj = (churchCares||[]).find(c => c.name === parentCare);
+    if(!careObj) return;
+    const bu = kidsByBigUnit[careObj.unit];
+    if(!bu) return;
+    const wentChurch = tick(r.church);
+    const wentCare = tick(r.careAtt);
+    if(wentChurch) bu.church++;
+    if(wentCare) bu.care++;
+    if(wentChurch !== wentCare) bu.mini++;
+  });
+
   let html = `<div class="dv2">
     <div class="dv2-hero">
       <div class="dv2-hero-label">อาทิตย์ที่ ${wk}</div>
       <div class="dv2-hero-date">แยกตามหน่วย</div>
+      <div class="dv2-hero-sub">แสดงแยก ผู้ใหญ่ / เด็ก ในแต่ละหน่วย</div>
     </div>`;
   Object.entries(DEMO.byUnit).forEach(([unitName, u]) => {
+    const kids = kidsByBigUnit[unitName] || {church:0,care:0,mini:0,members:0};
+    const adultMembers = Math.max(0, u.members - kids.members);   // ผู้ใหญ่ = total - kids
+    const adultChurch = Math.max(0, u.church - kids.church);
+    const adultCare = Math.max(0, u.care - kids.care);
+    const adultMini = Math.max(0, u.mini - kids.mini);
     html += `<div class="dv2-unit-section">
       <div class="dv2-unit-head">
         <div class="dv2-unit-name">${unitName}</div>
         <div class="dv2-unit-total" style="background:#E3F2FD;color:#1565C0">${u.members} คน · ${u.leaders} ผู้นำ</div>
       </div>
-      <div class="dv2-unit-row"><span class="nm">มาโบสถ์</span><div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${u.members?u.church/u.members*100:0}%;background:#2E7D32"></div></div><span class="val" style="color:#2E7D32">${u.church}</span></div>
-      <div class="dv2-unit-row"><span class="nm">มาแคร์</span><div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${u.members?u.care/u.members*100:0}%;background:#F2A93B"></div></div><span class="val" style="color:#E89017">${u.care}</span></div>
-      <div class="dv2-unit-row"><span class="nm">มินิเซิ้ต</span><div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${u.members?u.mini/u.members*100:0}%;background:#6A1B9A"></div></div><span class="val" style="color:#6A1B9A">${u.mini}</span></div>
+      <!-- ผู้ใหญ่ -->
+      <div style="font-size:11px;font-weight:700;color:#3A2F22;margin:8px 0 4px">👤 ผู้ใหญ่ (${adultMembers} คน)</div>
+      <div class="dv2-unit-row"><span class="nm">มาโบสถ์</span><div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${adultMembers?adultChurch/adultMembers*100:0}%;background:#2E7D32"></div></div><span class="val" style="color:#2E7D32">${adultChurch}</span></div>
+      <div class="dv2-unit-row"><span class="nm">มาแคร์</span><div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${adultMembers?adultCare/adultMembers*100:0}%;background:#F2A93B"></div></div><span class="val" style="color:#E89017">${adultCare}</span></div>
+      <div class="dv2-unit-row"><span class="nm">มินิเซิ้ต</span><div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${adultMembers?adultMini/adultMembers*100:0}%;background:#6A1B9A"></div></div><span class="val" style="color:#6A1B9A">${adultMini}</span></div>
+      <!-- เด็ก -->
+      <div style="font-size:11px;font-weight:700;color:#00695C;margin:10px 0 4px">👧 เด็ก (${kids.members} คน)</div>
+      <div class="dv2-unit-row"><span class="nm">มาโบสถ์</span><div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${kids.members?kids.church/kids.members*100:0}%;background:#26A69A"></div></div><span class="val" style="color:#00695C">${kids.church}</span></div>
+      <div class="dv2-unit-row"><span class="nm">มาแคร์</span><div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${kids.members?kids.care/kids.members*100:0}%;background:#80CBC4"></div></div><span class="val" style="color:#00695C">${kids.care}</span></div>
+      <div class="dv2-unit-row"><span class="nm">มินิเซิ้ต</span><div class="dv2-unit-bar"><div class="dv2-unit-bar-fill" style="width:${kids.members?kids.mini/kids.members*100:0}%;background:#4DB6AC"></div></div><span class="val" style="color:#00695C">${kids.mini}</span></div>
     </div>`;
   });
-  html += `${renderMomentumCard()}</div>`;
+  html += `</div>`;
   return html;
 }
 
@@ -1651,17 +1836,23 @@ async function churchOnCareChange(sel, unitId) {
   const savedMap = {};
   savedRows.forEach(r => { savedMap[r.id] = r; });
 
-  // แยกผู้ใหญ่ vs ผส.
+  // [v5] แยกผู้ใหญ่ vs ผส. — trim ก่อนเทียบ + รองรับสถานะหลายแบบ
+  const careTrim = (care||'').trim();
   const inCare = (churchMembers||[]).filter(m => {
+    const mc = (m.care||'').trim();
     const ns = normalizeStatus(m.status);
-    return m.care === care && !['สถ.','ผถ.'].includes(ns);
+    return mc === careTrim && !['สถ.','ผถ.'].includes(ns);
   });
   const adults = inCare.filter(m => {
     const ns = normalizeStatus(m.status);
-    return ns !== 'ผส.' && ns !== 'คจ.เด็ก';
+    return ns !== 'ผส.' && ns !== 'คจ.เด็ก' && ns !== 'ความหวังต่างจังหวัด';
   });
-  const interested = inCare.filter(m => normalizeStatus(m.status) === 'ผส.');
+  const interested = inCare.filter(m => {
+    const ns = normalizeStatus(m.status);
+    return ns === 'ผส.' || ns === 'ความหวังต่างจังหวัด';
+  });
   adults.sort((a,b) => statusRank(a.status) - statusRank(b.status));
+  console.log('[render] care=', careTrim, '| adults=', adults.length, '| interested=', interested.length);
 
   if(adults.length === 0) {
     tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:16px;color:#999">ไม่พบสมาชิกในแคร์นี้</td></tr>';
@@ -1903,6 +2094,11 @@ async function churchTestAPI() {
 document.addEventListener('DOMContentLoaded', async function() {
   if(loRestoreSession()) {
     await afterLogin();
+    // [v5] reset to default tab ตาม role
+    const role = (churchSession && churchSession.role) || 'unit';
+    if(role === 'admin') {
+      show('pro', document.getElementById('tab-pro'));
+    }
   } else {
     document.getElementById('login-overlay').style.display = 'flex';
   }
