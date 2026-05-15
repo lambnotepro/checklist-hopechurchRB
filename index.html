@@ -706,29 +706,31 @@ function ensureSaveButton(page, unitId) {
 
 // ==================== KIDS TABLE ====================
 function renderKidsTable(unitId, care) {
+  // [v7] ใต้แคร์ผู้ใหญ่ → คจ.เด็ก ติ๊กได้แค่ "แคร์" (รอบหลัก+ถวาย ครูรวีเก็บที่หน้าตัวเอง)
   const page = document.getElementById('pg-'+unitId);
   if(!page) return;
   const oldKids = page.querySelector('.kids-section');
   if(oldKids) oldKids.remove();
 
-  const kidsInCare = (churchKids||[]).filter(k => k.care === care);
+  const kidsInCare = (churchKids||[]).filter(k => (k.care||'').trim() === (care||'').trim());
   if(kidsInCare.length === 0) return;
 
   const html = `<div class="kids-section">
     <div class="gap"></div>
-    <div class="tw">
-      <div class="tt" style="background:#00695C;">👧 คจ.เด็ก ในแคร์ ${care}</div>
+    <div class="tw" style="border:1.5px solid #B2DFDB">
+      <div class="tt" style="background:linear-gradient(135deg,#00695C,#00897B);display:flex;align-items:center;justify-content:space-between">
+        <span>👧 คจ.เด็ก ในแคร์ ${care}</span>
+        <span style="background:rgba(255,255,255,.25);padding:3px 10px;border-radius:12px;font-size:11px">${kidsInCare.length} คน · ติ๊กแค่ "แคร์"</span>
+      </div>
       <table>
         <thead>
           <tr class="r1" style="background:#004D40;">
-            <th class="L">#</th><th class="L">คำนำหน้า</th>
-            <th class="L" style="min-width:140px;">ชื่อ-นามสกุล</th>
-            <th>ชื่อเล่น</th><th>ผู้ปกครอง</th>
-            <th class="h-or">รุ่ง<br>อรุณ</th><th class="h-kj">รอบ<br>หลัก</th>
-            <th class="h-at">อาหาร<br>เที่ยง</th><th class="h-pp">พพช.</th>
-            <th class="h-dw">ดาวิด</th><th class="h-cr">แคร์</th>
-            <th class="h-yy">เยี่ยม</th><th class="h-11">1:1</th>
-            <th class="h-pk">ประกาศ</th><th class="h-of">ถวาย</th>
+            <th class="L" style="width:30px">#</th>
+            <th class="L" style="width:75px">คำนำหน้า</th>
+            <th class="L" style="min-width:160px">ชื่อ-นามสกุล</th>
+            <th style="width:80px">ชื่อเล่น</th>
+            <th style="min-width:100px">ผู้ปกครอง</th>
+            <th class="h-cr" style="width:80px">แคร์</th>
           </tr>
         </thead>
         <tbody>${kidsInCare.map((k,i)=>renderKidRow(k,i,care)).join('')}</tbody>
@@ -740,22 +742,14 @@ function renderKidsTable(unitId, care) {
 }
 
 function renderKidRow(k, idx, parentCare) {
+  // [v7] เด็กในหน้าแคร์ผู้ใหญ่ — ติ๊กแค่ "แคร์"
   return `<tr data-mid="${k.id}" data-nick="${k.nick||''}" data-care="${parentCare}" data-district="${k.district||''}" data-kid="1">
     <td class="L">${idx+1}</td>
     <td class="L">${k.prefix||''}</td>
     <td class="L">${k.name||''}</td>
     <td><span class="nl">${k.nick||''}</span></td>
     <td style="font-size:11px;color:#666">${k.parent||''}</td>
-    <td><span class="cb ck-act" data-fld="dawn" onclick="toggleCk(this)"></span></td>
-    <td><span class="cb ck-act" data-fld="church" onclick="toggleCk(this)"></span></td>
-    <td><span class="cb ck-act" data-fld="lunch" onclick="toggleCk(this)"></span></td>
-    <td><span class="cb ck-act" data-fld="ppch" onclick="toggleCk(this)"></span></td>
-    <td><span class="cb ck-act" data-fld="david" onclick="toggleCk(this)"></span></td>
     <td><span class="cb ck-act" data-fld="careAtt" onclick="toggleCk(this)"></span></td>
-    <td><input type="number" class="nn" data-fld="yy" value="0" min="0"></td>
-    <td><input type="number" class="nn" data-fld="one1" value="0" min="0"></td>
-    <td><input type="number" class="nn" data-fld="prok" value="0" min="0"></td>
-    <td><input type="number" class="oi" data-fld="offering" value="0" min="0"></td>
   </tr>`;
 }
 
@@ -876,7 +870,10 @@ async function restoreKidsState(dateStr) {
       const tr = document.querySelector('#kids-unit-content tr[data-mid="'+s.id+'"]');
       if(!tr) return;
       ['dawn','church','careAtt','lunch','ppch','david'].forEach(fld => {
-        if(s[fld] === '✓') {
+        const v = s[fld];
+        const isTrue = (v === '✓' || v === '✔' || v === true || v === 1 ||
+                        String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes');
+        if(isTrue) {
           const ck = tr.querySelector('.ck-act[data-fld="'+fld+'"]');
           if(ck) { ck.classList.add('ck-on'); ck.classList.add('on'); ck.textContent = '✓'; }
         }
@@ -1021,7 +1018,8 @@ function aggregateForWeek(wkStr) {
   const careDistrict = {};
   (churchCares || []).forEach(c => { careDistrict[c.name] = c.district; });
 
-  const tick = v => v === '✓' || v === true || v === 'TRUE' || v === 'true' || v === 1;
+  const tick = v => v === '✓' || v === '✔' || v === true || v === 1 ||
+                       String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes';
 
   rowsAll.forEach(r => {
     const isKid = String(r.id || '').startsWith('K') || r.care === 'คจ.เด็ก';
@@ -1139,6 +1137,9 @@ function renderView1(wk) {
       </div>
     </div>`;
 
+  // [v7] การ์ดสรุปคนที่มา-โบสถ์/แคร์ แต่ละหน่วย ในสัปดาห์ที่เลือก
+  const weeklyAttendance = renderWeeklyAttendanceCard(wk);
+
   const counts = computeMemberCounts();
   const rosterSection = `<div class="dv2-card">
     <div class="dv2-card-h">👥 รายชื่อสมาชิกทั้งหมด <span class="pill">${counts.total} คน</span></div>
@@ -1175,7 +1176,85 @@ function renderView1(wk) {
   const newPpl = renderNewPeopleTable();
   const momentum = renderMomentumCard();
 
-  return `<div class="dv2">${hero}${rosterSection}${activities}${donut}${compare}${momentum}${newPpl}</div>`;
+  return `<div class="dv2">${hero}${weeklyAttendance}${rosterSection}${activities}${donut}${compare}${momentum}${newPpl}</div>`;
+}
+
+// [v7] การ์ดสรุปสมาชิกที่มาในสัปดาห์ — แต่ละหน่วย (ผู้ใหญ่ + เด็ก)
+function renderWeeklyAttendanceCard(wkStr) {
+  const UNIT_COLOR = {
+    'หน่วย Pro':'#1565C0','หน่วยภูมิศาสตร์':'#2E7D32',
+    'หน่วยซีเนียร์':'#6A1B9A','หน่วยสถาบัน':'#BF360C'
+  };
+  // นับเด็กที่มาในสัปดาห์ → group by หน่วยใหญ่
+  const wkNorm = (wkStr||'').trim();
+  const tick = v => v === '✓' || v === '✔' || v === true || v === 1 ||
+                    String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes';
+
+  const kidsByUnit = {};
+  Object.keys(UNIT_COLOR).forEach(u => kidsByUnit[u] = {church:0, care:0, members:0});
+  // นับสมาชิกเด็ก (จาก churchKids)
+  (churchKids||[]).forEach(k => {
+    const careObj = (churchCares||[]).find(c => (c.name||'').trim() === (k.care||'').trim());
+    if(careObj && kidsByUnit[careObj.unit]) kidsByUnit[careObj.unit].members++;
+  });
+  // นับ ✓ จาก WEEKLY_LOG
+  (churchWeeklyRows||[]).forEach(r => {
+    if(normalizeDateStr(r.date) !== wkNorm) return;
+    const isKid = String(r.id||'').startsWith('K') || (r.care||'').trim() === 'คจ.เด็ก';
+    if(!isKid) return;
+    const parentCare = (r.unit||'').trim();
+    const careObj = (churchCares||[]).find(c => (c.name||'').trim() === parentCare);
+    if(!careObj) return;
+    const bu = kidsByUnit[careObj.unit];
+    if(!bu) return;
+    if(tick(r.church)) bu.church++;
+    if(tick(r.careAtt)) bu.care++;
+  });
+
+  const rows = Object.entries(DEMO.byUnit).map(([unitName, u]) => {
+    if(u.members === 0) return '';
+    const kids = kidsByUnit[unitName] || {church:0, care:0, members:0};
+    const adultMembers = Math.max(0, u.members - kids.members);
+    const adultChurch = Math.max(0, u.church - kids.church);
+    const adultCare = Math.max(0, u.care - kids.care);
+    const color = UNIT_COLOR[unitName] || '#666';
+    const totalChurch = u.church;
+    const totalCare = u.care;
+
+    return `<div style="border-top:1px solid #F0E8D8;padding:10px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-weight:700;color:${color};font-size:13px">${unitName}</span>
+        <span style="font-size:11px;color:#8B7355">สมาชิก ${u.members} คน</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:11px">
+        <div style="background:#FAF6F0;padding:8px;border-radius:6px;text-align:center">
+          <div style="color:#8B7355;font-size:10px;margin-bottom:2px">👤 ผู้ใหญ่ โบสถ์</div>
+          <div style="font-weight:800;font-size:16px;color:${color}">${adultChurch}<span style="font-size:10px;color:#999"> / ${adultMembers}</span></div>
+        </div>
+        <div style="background:#FAF6F0;padding:8px;border-radius:6px;text-align:center">
+          <div style="color:#8B7355;font-size:10px;margin-bottom:2px">👤 ผู้ใหญ่ แคร์</div>
+          <div style="font-weight:800;font-size:16px;color:${color}">${adultCare}<span style="font-size:10px;color:#999"> / ${adultMembers}</span></div>
+        </div>
+        <div style="background:#E0F2F1;padding:8px;border-radius:6px;text-align:center">
+          <div style="color:#00695C;font-size:10px;margin-bottom:2px">👧 เด็ก โบสถ์</div>
+          <div style="font-weight:800;font-size:16px;color:#00695C">${kids.church}<span style="font-size:10px;color:#80CBC4"> / ${kids.members}</span></div>
+        </div>
+        <div style="background:#E0F2F1;padding:8px;border-radius:6px;text-align:center">
+          <div style="color:#00695C;font-size:10px;margin-bottom:2px">👧 เด็ก แคร์</div>
+          <div style="font-weight:800;font-size:16px;color:#00695C">${kids.care}<span style="font-size:10px;color:#80CBC4"> / ${kids.members}</span></div>
+        </div>
+      </div>
+      <div style="margin-top:6px;font-size:11px;color:#5C4830;text-align:right">
+        รวมหน่วย → <strong style="color:${color}">โบสถ์ ${totalChurch}</strong> / <strong style="color:#F2A93B">แคร์ ${totalCare}</strong> / <strong style="color:#6A1B9A">มินิ ${u.mini}</strong>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="dv2-card">
+    <div class="dv2-card-h">📋 สรุปการมาประชุมรายหน่วย <span class="pill">อาทิตย์ที่ ${wkStr}</span></div>
+    <div style="font-size:11px;color:#8B7355;margin-bottom:4px">แสดงจำนวนผู้ใหญ่ + เด็ก แยกชัดเจน · เลขท้าย / คือสมาชิกทั้งหมด</div>
+    ${rows || '<div style="text-align:center;padding:16px;color:#999;font-size:12px">ยังไม่มีข้อมูล</div>'}
+  </div>`;
 }
 
 // [v5] Donut chart — สัดส่วนสมาชิกแต่ละหน่วย
@@ -1383,7 +1462,8 @@ function renderView3(wk) {
   });
   // นับ ✓ จาก WEEKLY_LOG
   const wkNorm = wk.trim();
-  const tick = v => v === '✓' || v === true || v === 'TRUE' || v === 'true' || v === 1;
+  const tick = v => v === '✓' || v === '✔' || v === true || v === 1 ||
+                       String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes';
   (churchWeeklyRows||[]).forEach(r => {
     if(normalizeDateStr(r.date) !== wkNorm) return;
     const isKid = String(r.id||'').startsWith('K') || r.care === 'คจ.เด็ก';
@@ -2031,7 +2111,11 @@ async function churchOnCareChange(sel, unitId) {
       const tr = tbody.querySelector('tr[data-mid="'+m.id+'"]');
       if(!tr) return;
       ['dawn','church','careAtt','lunch','ppch','david'].forEach(fld => {
-        if(saved[fld] === '✓' || saved[fld] === true) {
+        // [v7] รองรับทุกรูปแบบ tick
+        const v = saved[fld];
+        const isTrue = (v === '✓' || v === '✔' || v === true || v === 1 ||
+                        String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes');
+        if(isTrue) {
           const ck = tr.querySelector('.ck-act[data-fld="'+fld+'"]');
           if(ck) { ck.classList.add('on'); ck.classList.add('ck-on'); ck.textContent = '✓'; }
         }
@@ -2060,7 +2144,10 @@ async function churchOnCareChange(sel, unitId) {
       const tr = page.querySelector('.kids-section tr[data-mid="'+k.id+'"]');
       if(!tr) return;
       ['dawn','church','careAtt','lunch','ppch','david'].forEach(fld => {
-        if(savedKid[fld] === '✓') {
+        const v = savedKid[fld];
+        const isTrue = (v === '✓' || v === '✔' || v === true || v === 1 ||
+                        String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes');
+        if(isTrue) {
           const ck = tr.querySelector('.ck-act[data-fld="'+fld+'"]');
           if(ck) { ck.classList.add('on'); ck.classList.add('ck-on'); ck.textContent = '✓'; }
         }
