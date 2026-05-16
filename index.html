@@ -829,11 +829,27 @@ function addNM(tbodyId) {
   if(tb.querySelector('.er')) tb.innerHTML = '';
   const tr = document.createElement('tr');
   tr.dataset.manual = '1';  // mark as manual (not from sheet)
+  // 6 activity checkboxes (compact)
+  const acts = [
+    {k:'dawn',label:'รุ่งอรุณ',c:'#E65100'},
+    {k:'church',label:'รอบหลัก',c:'#BF360C'},
+    {k:'lunch',label:'อาหาร',c:'#004D40'},
+    {k:'ppch',label:'พพช.',c:'#827717'},
+    {k:'careAtt',label:'แคร์',c:'#2E7D32'}
+  ];
+  const actHtml = acts.map(a => `<label style="display:inline-flex;flex-direction:column;align-items:center;font-size:9px;font-weight:600;color:${a.c};margin-right:6px;cursor:pointer">
+    <span style="background:${a.c};color:#fff;padding:2px 4px;border-radius:3px;margin-bottom:2px;line-height:1;white-space:nowrap">${a.label}</span>
+    <input type="checkbox" data-fld="${a.k}" style="margin:0">
+  </label>`).join('');
   tr.innerHTML = `
     <td class="L"><input type="text" class="nmi" data-fld="name" placeholder="ชื่อ-นามสกุล / ชื่อเล่น"></td>
     <td><select class="nms" data-fld="type" onchange="onNMTypeChange(this)"><option>ผู้สนใจ / เยี่ยมเยียน</option><option>รับเชื่อ</option><option>เยี่ยมเยียนพิเศษ</option></select></td>
     <td><input type="text" class="nmi" data-fld="care" placeholder="สังกัด/แคร์ที่ชวน"></td>
-    <td><input type="text" class="nmi" data-fld="activity" placeholder="กิจกรรม / หมายเหตุ"></td>
+    <td>
+      <div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center">${actHtml}
+        <input type="number" data-fld="offering" placeholder="฿" min="0" style="width:50px;padding:2px 4px;border:1.5px solid #880E4F;border-radius:4px;font-size:11px;color:#880E4F;text-align:center;margin-left:4px">
+      </div>
+    </td>
     <td><button class="db" onclick="delNM(this)">🗑</button></td>`;
   tb.appendChild(tr);
 }
@@ -870,14 +886,21 @@ async function churchSaveNewPeopleManual(tbodyId, unitId) {
     const name = (tr.querySelector('input[data-fld="name"]')||{}).value || '';
     const type = (tr.querySelector('[data-fld="type"]')||{}).value || '';
     const care = (tr.querySelector('[data-fld="care"]')||{}).value || '';
-    const activity = (tr.querySelector('input[data-fld="activity"]')||{}).value || '';
     if(!name.trim() || !type) return;
+    // [v10] รวม activity เป็นข้อความ "รุ่งอรุณ, รอบหลัก, ..." จาก checkbox
+    const actLabels = {dawn:'รุ่งอรุณ',church:'รอบหลัก',lunch:'อาหารเที่ยง',ppch:'พพช.',careAtt:'แคร์'};
+    const ticked = [];
+    tr.querySelectorAll('input[type="checkbox"][data-fld]').forEach(cb => {
+      if(cb.checked && actLabels[cb.dataset.fld]) ticked.push(actLabels[cb.dataset.fld]);
+    });
+    const offering = parseInt((tr.querySelector('input[data-fld="offering"]')||{}).value) || 0;
+    const activityStr = ticked.join(', ') + (offering>0 ? ' / ถวาย '+offering+' ฿' : '');
     const nick = name.split(' ').pop().replace(/\(|\)/g,'').trim();
     people.push({
       date: dateStr, name: name.trim(), nick: nick,
       type: type, care: care.trim(), unit: reportUnit,
       leader: type==='เยี่ยมเยียนพิเศษ'?'นับในยอดผู้นำ':'',
-      activity: activity.trim(), note: ''
+      activity: activityStr, note: ''
     });
   });
 
@@ -915,26 +938,42 @@ async function churchSaveNewPeopleManual(tbodyId, unitId) {
   if(errMsg && okCount === 0) apiToast('❌ ไม่สามารถบันทึก: '+errMsg,'err');
   else {
     apiToast('✅ บันทึก '+okCount+'/'+people.length+' คนใหม่','ok');
-    // reload newPeople + re-render หน้า
+    // reload newPeople จากชีต + ล้าง manual rows + render ใหม่
     await churchLoadNewPeople();
-    restoreNewPeopleTable(unitId, dateStr);
+    restoreNewPeopleTable(unitId, dateStr, {clearManual:true});
+    // refresh dashboard
+    if(typeof renderDash === 'function') renderDash();
   }
 }
 
 // แสดงคนใหม่ที่บันทึกไว้ในชีต (โหลด churchNewPeople ที่ filter ตาม week + unit) ลงตาราง
-function restoreNewPeopleTable(unitId, dateStr) {
+// opts.clearManual = true เพื่อล้าง manual rows ที่กำลังกรอกอยู่ (หลังกดบันทึก)
+function restoreNewPeopleTable(unitId, dateStr, opts) {
+  opts = opts || {};
   const tbodyIdMap = {pro:'pnm', geo:'gnm', senior:'snm', inst:'inm'};
   const unitDispMap = {pro:'หน่วย Pro', geo:'หน่วยภูมิศาสตร์', senior:'หน่วยซีเนียร์', inst:'หน่วยสถาบัน'};
   const tb = document.getElementById(tbodyIdMap[unitId]);
   if(!tb) return;
   const unit = unitDispMap[unitId];
   const wkN = normalizeDateStr(dateStr);
-  const saved = (churchNewPeople||[]).filter(p => normalizeDateStr(p.date) === wkN && (p.unit||'').trim() === unit);
-
-  // ล้างเฉพาะ row ที่ไม่ใช่ manual + er
-  Array.from(tb.querySelectorAll('tr')).forEach(tr => {
-    if(tr.classList.contains('er') || !tr.dataset.manual) tr.remove();
+  const isAdmin = (churchSession && churchSession.role === 'admin');
+  // admin = เห็นทุก unit / unit user = เฉพาะ unit ตัวเอง
+  const saved = (churchNewPeople||[]).filter(p => {
+    if(normalizeDateStr(p.date) !== wkN) return false;
+    if(isAdmin) return true;
+    return (p.unit||'').trim() === unit;
   });
+  console.log('[restoreNewPeople] unit=', unit, 'date=', dateStr, '→', saved.length, 'rows');
+
+  // ล้างทั้งหมด (er + manual + saved-display) → render ใหม่
+  if(opts.clearManual) {
+    tb.innerHTML = '';
+  } else {
+    // ล้างเฉพาะ er + saved-display (เก็บ manual ที่กำลังกรอก)
+    Array.from(tb.querySelectorAll('tr')).forEach(tr => {
+      if(tr.classList.contains('er') || !tr.dataset.manual) tr.remove();
+    });
+  }
 
   if(saved.length === 0 && !tb.children.length) {
     tb.innerHTML = '<tr class="er"><td colspan="5">ยังไม่มีคนใหม่</td></tr>';
@@ -943,8 +982,9 @@ function restoreNewPeopleTable(unitId, dateStr) {
   saved.forEach(p => {
     const tr = document.createElement('tr');
     tr.style.background = '#FFF8E1';
+    const unitBadge = isAdmin ? '<div style="font-size:9px;color:#999;margin-top:2px">'+(p.unit||'')+'</div>' : '';
     tr.innerHTML = `
-      <td class="L"><strong>${p.name||''}</strong> ${p.nick?'<span style="color:#888">('+p.nick+')</span>':''}</td>
+      <td class="L"><strong>${p.name||''}</strong> ${p.nick?'<span style="color:#888">('+p.nick+')</span>':''}${unitBadge}</td>
       <td><span style="background:#6A1B9A22;color:#6A1B9A;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">${p.type||''}</span></td>
       <td style="font-size:11px">${p.care||''}</td>
       <td style="font-size:11px;color:#666">${p.activity||p.note||''}</td>
@@ -1615,22 +1655,61 @@ function computeMemberCounts() {
 }
 
 function renderNewPeopleTable() {
-  const list = DEMO.newPeople || [];
-  if(list.length === 0) return '';
+  // [v10] ใช้ churchNewPeople ตรงๆ (ทุกอำเภอ ทุกหน่วย ในสัปดาห์ที่เลือก)
+  const wkSel = document.getElementById('db-range');
+  const wk = wkSel ? wkSel.value : '';
+  const wkN = normalizeDateStr(wk);
+  const list = (churchNewPeople||[]).filter(p => normalizeDateStr(p.date) === wkN);
+  if(list.length === 0) {
+    return `<div class="dv2-card">
+      <div class="dv2-card-h">🌱 รายชื่อคนใหม่สัปดาห์นี้ <span class="pill">0 คน</span></div>
+      <div style="text-align:center;padding:18px;color:#999;font-size:13px">ยังไม่มีคนใหม่ในสัปดาห์นี้</div>
+    </div>`;
+  }
+  const UNIT_COLOR = {
+    'หน่วย Pro':'#1565C0','หน่วยภูมิศาสตร์':'#2E7D32',
+    'หน่วยซีเนียร์':'#6A1B9A','หน่วยสถาบัน':'#BF360C',
+    'ผู้นำ':'#827717','คริสตจักรเด็ก':'#00897B'
+  };
+  // group by unit
+  const byUnit = {};
+  list.forEach(p => {
+    const u = (p.unit||'ไม่ระบุ').trim();
+    if(!byUnit[u]) byUnit[u] = [];
+    byUnit[u].push(p);
+  });
+
+  let body = '';
+  Object.entries(byUnit).forEach(([unit, people]) => {
+    const color = UNIT_COLOR[unit] || '#666';
+    body += `<tr style="background:${color}15"><td colspan="5" style="padding:8px 12px;font-weight:800;color:${color}">▎ ${unit} <span style="color:#999;font-weight:500">(${people.length} คน)</span></td></tr>`;
+    people.forEach(p => {
+      const badge = p.type==='รับเชื่อ' ? 'badge-believe' :
+                    (p.type==='เยี่ยมเยียนพิเศษ'||p.type==='เยี่ยมพิเศษ') ? 'badge-special' :
+                    'badge-interest';
+      const noteMatch = (p.note||'').match(/ครั้งที่\s*(\d+)/);
+      const cntBadge = noteMatch ? '<span style="background:#E65100;color:#fff;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px">ครั้งที่ '+noteMatch[1]+'</span>' : '';
+      body += `<tr style="border-bottom:1px solid #F0F0F0">
+        <td class="L" style="padding:8px 12px"><strong>${p.name||''}</strong> ${p.nick?'<span style="color:#888;font-size:11px">('+p.nick+')</span>':''}${cntBadge}</td>
+        <td style="text-align:center"><span class="badge-new ${badge}">${p.type||''}</span></td>
+        <td style="text-align:center;font-size:11px">${p.care||''}</td>
+        <td style="text-align:center;font-size:11px;color:#666">${p.activity||''}</td>
+        <td style="text-align:center;font-size:10px;color:#999">${p.date||''}</td>
+      </tr>`;
+    });
+  });
+
   return `<div class="dv2-card">
-    <div class="dv2-card-h">🌱 รายชื่อคนใหม่</div>
-    <table class="new-people-table">
-      <thead><tr><th class="L">ชื่อ</th><th>ประเภท</th><th>หน่วย</th><th>แคร์</th></tr></thead>
-      <tbody>${list.map(p => `<tr>
-        <td class="L">${p.name||''} ${p.nick?'('+p.nick+')':''}</td>
-        <td><span class="badge-new ${
-          p.type==='รับเชื่อ' ? 'badge-believe' :
-          (p.type==='เยี่ยมเยียนพิเศษ'||p.type==='เยี่ยมพิเศษ') ? 'badge-special' :
-          'badge-interest'
-        }">${p.type||''}</span></td>
-        <td>${p.unit||''}</td>
-        <td>${p.care||''}</td>
-      </tr>`).join('')}</tbody>
+    <div class="dv2-card-h">🌱 รายชื่อคนใหม่ทุกหน่วย <span class="pill">${list.length} คน</span></div>
+    <table class="new-people-table" style="width:100%">
+      <thead><tr>
+        <th class="L">ชื่อ-นามสกุล</th>
+        <th>ประเภท</th>
+        <th>แคร์ที่ชวน</th>
+        <th>กิจกรรม</th>
+        <th>วันที่</th>
+      </tr></thead>
+      <tbody>${body}</tbody>
     </table>
   </div>`;
 }
@@ -2472,9 +2551,99 @@ async function churchSaveWeekly(unitId) {
 
   const rows = [];
   trs.forEach(tr => {
+    const mid = tr.dataset.mid;
+    const nick = tr.dataset.nick || '';
+    const district = tr.dataset.district || '';
+    const isKid = tr.dataset.kid === '1' || mid.startsWith('K');
+    const rowCare = isKid ? 'คจ.เด็ก' : care;
+    const rowUnit = isKid ? care : unit;
+
+    const row = {
+      id: mid, nick, care: rowCare, unit: rowUnit, district,
+      dawn:'', church:'', careAtt:'', lunch:'', ppch:'', david:'',
+      yy: 0, one1: 0, prok: 0, offering: 0
+    };
+    tr.querySelectorAll('.ck-act').forEach(ck => {
+      const f = ck.dataset.fld;
+      if(f && (ck.classList.contains('ck-on') || ck.classList.contains('on'))) row[f] = '✓';
+    });
+    tr.querySelectorAll('input[type="number"]').forEach(inp => {
+      const f = inp.dataset.fld;
+      if(f) row[f] = parseInt(inp.value) || 0;
+    });
+    rows.push(row);
+  });
+
+  let adultCount=0, kidCount=0, hasDataCount=0;
+  rows.forEach(r => {
+    if((r.id||'').startsWith('K')) kidCount++; else adultCount++;
+    if(r.dawn||r.church||r.careAtt||r.lunch||r.ppch||r.david||r.yy||r.one1||r.prok||r.offering) hasDataCount++;
+  });
+
+  if(!confirm('ยืนยัน Smart Sync เข้า Weekly Log?\n\nสัปดาห์: '+dateStr+'\nแคร์: '+care+'\nผู้ใหญ่: '+adultCount+' / เด็ก: '+kidCount+'\nมีข้อมูล: '+hasDataCount+' แถว')) return;
+
+  showLoading(true);
+  let totalIns=0, totalUpd=0, totalDel=0;
+  let errMsg = null;
+
+  const adultRows = rows.filter(r => !(r.id||'').startsWith('K'));
+  if(adultRows.length > 0) {
+    const res = await _smartSync(dateStr, care, adultRows);
+    if(res.ok) { totalIns += res.stats.inserted; totalUpd += res.stats.updated; totalDel += res.stats.deleted; }
+    else errMsg = res.error;
+  }
+  const kidRows = rows.filter(r => (r.id||'').startsWith('K'));
+  if(kidRows.length > 0 && !errMsg) {
+    const res = await _smartSync(dateStr, 'คจ.เด็ก', kidRows);
+    if(res.ok) { totalIns += res.stats.inserted; totalUpd += res.stats.updated; totalDel += res.stats.deleted; }
+    else errMsg = res.error;
+  }
+
+  showLoading(false);
+  if(errMsg) apiToast('❌ '+errMsg, 'err');
+  else {
+    apiToast('✅ Sync: เพิ่ม '+totalIns+' / อัปเดต '+totalUpd+' / ลบ '+totalDel, 'ok');
+    churchLoadWeekly();
+  }
+}
+
+async function _smartSync(dateStr, careName, rows) {
+  const tok = (churchSession && churchSession.token) || '';
+  if(!tok) {
+    apiToast('⚠️ Session หมดอายุ กรุณาล็อกอินใหม่','err');
+    setTimeout(()=>{ try{localStorage.clear();}catch(e){} window.location.reload(); }, 1500);
+    return {ok:false, error:'no token'};
+  }
+  const payload = JSON.stringify({action: 'smartSyncWeekly', token: tok, date: dateStr, care: careName, rows: rows});
+  try {
+    const r = await fetch(CHURCH_API, {method:'POST', mode:'cors', redirect:'follow', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: payload});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const text = await r.text();
+    const d = JSON.parse(text);
+    if(d.ok) return d;
+    return {ok:false, error: d.error||'unknown'};
+  } catch(e) {
+    try {
+      await fetch(CHURCH_API, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:payload});
+      return {ok:true, stats:{inserted:0,updated:0,deleted:0}, msg:'ส่งแล้วในโหมด no-cors'};
+    } catch(e2) {
+      return {ok:false, error: e.message};
+    }
+  }
+}
+
+async function churchSaveWeeklyKids() {
+  const cont = document.getElementById('kids-unit-content');
+  if(!cont) return apiToast('❌ ไม่พบเนื้อหา','err');
+  const wkSel = document.getElementById('kw');
+  const dateStr = wkSel ? wkSel.value : '';
+  if(!dateStr) return apiToast('⚠️ เลือกสัปดาห์ก่อน','err');
+  const trs = cont.querySelectorAll('tr[data-mid]');
+  if(!trs.length) return apiToast('⚠️ ไม่มีข้อมูล','err');
+  const rows = [];
+  trs.forEach(tr => {
     const parentCare = tr.dataset.care || '';
-    const row = {date:dateStr, id:tr.dataset.mid, nick:tr.dataset.nick||'',
-      care:'คจ.เด็ก', unit:parentCare, district:tr.dataset.district||'',
+    const row = {date:dateStr, id:tr.dataset.mid, nick:tr.dataset.nick||'', care:'คจ.เด็ก', unit:parentCare, district:tr.dataset.district||'',
       dawn:'',church:'',careAtt:'',lunch:'',ppch:'',david:'',yy:0,one1:0,prok:0,offering:0};
     tr.querySelectorAll('.ck-act').forEach(ck=>{
       if(ck.dataset.fld && (ck.classList.contains('ck-on') || ck.classList.contains('on'))) row[ck.dataset.fld] = '✓';
@@ -2493,7 +2662,6 @@ async function churchSaveWeekly(unitId) {
   showLoading(false);
 }
 
-// ===== HELPERS =====
 function showLoading(on){
   const el = document.getElementById('loading-bar');
   if(el) el.style.display=on?'block':'none';
