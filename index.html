@@ -827,6 +827,14 @@ function addNM(tbodyId) {
   const tb = document.getElementById(tbodyId);
   if(!tb) return;
   if(tb.querySelector('.er')) tb.innerHTML = '';
+
+  // [v12] หาแคร์ที่ user กำลังเลือกอยู่ในหน้านี้ → ใช้เป็นค่าตั้งต้น
+  const tbToUnit = {pnm:'pro', gnm:'geo', snm:'senior', inm:'inst'};
+  const unitId = tbToUnit[tbodyId] || '';
+  const careSelMap = {pro:'pc', geo:'gc', senior:'sc', inst:'ic'};
+  const careSel = document.getElementById(careSelMap[unitId]);
+  const defaultCare = (careSel && careSel.value) ? careSel.value : '';
+
   const tr = document.createElement('tr');
   tr.dataset.manual = '1';  // mark as manual (not from sheet)
   // 6 activity checkboxes (compact)
@@ -844,7 +852,7 @@ function addNM(tbodyId) {
   tr.innerHTML = `
     <td class="L"><input type="text" class="nmi" data-fld="name" placeholder="ชื่อ-นามสกุล / ชื่อเล่น"></td>
     <td><select class="nms" data-fld="type" onchange="onNMTypeChange(this)"><option>ผู้สนใจ / เยี่ยมเยียน</option><option>รับเชื่อ</option><option>เยี่ยมเยียนพิเศษ</option></select></td>
-    <td><input type="text" class="nmi" data-fld="care" placeholder="สังกัด/แคร์ที่ชวน"></td>
+    <td><input type="text" class="nmi" data-fld="care" placeholder="สังกัด/แคร์ที่ชวน" value="${defaultCare}"></td>
     <td>
       <div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center">${actHtml}
         <input type="number" data-fld="offering" placeholder="฿" min="0" style="width:50px;padding:2px 4px;border:1.5px solid #880E4F;border-radius:4px;font-size:11px;color:#880E4F;text-align:center;margin-left:4px">
@@ -856,10 +864,23 @@ function addNM(tbodyId) {
 
 function onNMTypeChange(sel) {
   const tr = sel.closest('tr');
-  const careInput = tr.querySelector('input[data-fld="care"]');
+  const careField = tr.querySelector('[data-fld="care"]');
+  if(!careField) return;
+
+  // [v12] หาแคร์ที่ user กำลังเลือกอยู่ (auto-fill เมื่อกลับเป็น ผู้สนใจ/รับเชื่อ)
+  const tb = tr.closest('tbody');
+  const tbToUnit = {pnm:'pro', gnm:'geo', snm:'senior', inm:'inst'};
+  const unitId = tb ? (tbToUnit[tb.id]||'') : '';
+  const careSelMap = {pro:'pc', geo:'gc', senior:'sc', inst:'ic'};
+  const pageCareSel = unitId ? document.getElementById(careSelMap[unitId]) : null;
+  const currentCare = (pageCareSel && pageCareSel.value) ? pageCareSel.value : '';
+
   if(sel.value === 'เยี่ยมเยียนพิเศษ') {
-    // Replace input with dropdown for special visit source
-    careInput.outerHTML = '<select class="nms" data-fld="care"><option value="">เลือกที่มา</option><option>ความหวังต่างจังหวัด</option><option>คริสตจักรอื่น</option></select>';
+    // เปลี่ยนเป็น dropdown ที่มา
+    careField.outerHTML = '<select class="nms" data-fld="care"><option value="">เลือกที่มา</option><option>ความหวังต่างจังหวัด</option><option>คริสตจักรอื่น</option></select>';
+  } else {
+    // ผู้สนใจ / รับเชื่อ → กลับเป็น input ปกติ + auto-fill แคร์ที่กำลังเลือกอยู่
+    careField.outerHTML = '<input type="text" class="nmi" data-fld="care" placeholder="สังกัด/แคร์ที่ชวน" value="'+currentCare+'">';
   }
 }
 
