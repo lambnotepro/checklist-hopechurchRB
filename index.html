@@ -1474,24 +1474,40 @@ function renderWeeklyAttendanceCard(wkStr) {
     {key:'david',   label:'ดาวิด',     color:'#1A237E', emoji:'👑'},
     {key:'careAtt', label:'แคร์',      color:'#2E7D32', emoji:'🤝'}
   ];
+  // [v13] กิจกรรมของ คจ.เด็ก — เหลือแค่ 3 อย่าง (รอบหลัก/แคร์/ถวาย)
+  const KID_ACTIVITIES = [
+    {key:'church',  label:'รอบหลัก', color:'#BF360C', emoji:'⛪'},
+    {key:'careAtt', label:'แคร์',    color:'#2E7D32', emoji:'🤝'},
+    {key:'offering',label:'ถวาย',    color:'#880E4F', emoji:'💰', isSum:true}
+  ];
   // นับ adult+kids ต่อ unit ต่อ activity
   const actByUnit = {};
   Object.keys(UNIT_COLOR).forEach(u => {
     actByUnit[u] = {adult:{}, kid:{}};
-    ACTIVITIES.forEach(a => { actByUnit[u].adult[a.key] = 0; actByUnit[u].kid[a.key] = 0; });
+    ACTIVITIES.forEach(a => { actByUnit[u].adult[a.key] = 0; });
+    KID_ACTIVITIES.forEach(a => { actByUnit[u].kid[a.key] = 0; });
   });
   (churchWeeklyRows||[]).forEach(r => {
     if(normalizeDateStr(r.date) !== wkNorm) return;
     const isKid = String(r.id||'').startsWith('K') || (r.care||'').trim() === 'คจ.เด็ก';
     let unitName = (r.unit||'').trim();
     if(isKid) {
-      // map kid by parent care → unit
       const careObj = (churchCares||[]).find(c => (c.name||'').trim() === unitName);
       if(careObj) unitName = careObj.unit;
     }
     if(!actByUnit[unitName]) return;
-    const target = isKid ? actByUnit[unitName].kid : actByUnit[unitName].adult;
-    ACTIVITIES.forEach(a => { if(tick(r[a.key])) target[a.key]++; });
+    if(isKid) {
+      // นับเฉพาะ 3 กิจกรรม
+      KID_ACTIVITIES.forEach(a => {
+        if(a.isSum) {
+          actByUnit[unitName].kid[a.key] += (parseFloat(r[a.key])||0);
+        } else if(tick(r[a.key])) {
+          actByUnit[unitName].kid[a.key]++;
+        }
+      });
+    } else {
+      ACTIVITIES.forEach(a => { if(tick(r[a.key])) actByUnit[unitName].adult[a.key]++; });
+    }
   });
 
   const rows = Object.entries(DEMO.byUnit).map(([unitName, u]) => {
@@ -1501,7 +1517,7 @@ function renderWeeklyAttendanceCard(wkStr) {
     const color = UNIT_COLOR[unitName] || '#666';
     const A = actByUnit[unitName] || {adult:{}, kid:{}};
     const totalAdult = ACTIVITIES.reduce((s,a)=>s+(A.adult[a.key]||0),0);
-    const totalKid   = ACTIVITIES.reduce((s,a)=>s+(A.kid[a.key]||0),0);
+    const totalKid   = KID_ACTIVITIES.reduce((s,a)=>s+(a.isSum ? 0 : (A.kid[a.key]||0)),0);
 
     return `<div style="border:1.5px solid ${color}22;border-radius:12px;padding:16px;margin-bottom:14px;background:linear-gradient(135deg,#fff 0%,${color}05 100%)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid ${color}22">
@@ -1526,14 +1542,14 @@ function renderWeeklyAttendanceCard(wkStr) {
           </div>`).join('')}
       </div>
 
-      <div style="font-size:11px;color:#00695C;font-weight:600;margin-bottom:6px">👧 เด็ก (คจ.เด็ก)</div>
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px">
-        ${ACTIVITIES.map(a => `
+      <div style="font-size:11px;color:#00695C;font-weight:600;margin-bottom:6px">👧 เด็ก (คจ.เด็ก) <span style="color:#80CBC4;font-weight:500">— เฉพาะ 3 กิจกรรม</span></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        ${KID_ACTIVITIES.map(a => `
           <div style="background:#E0F2F1;border:1px solid #B2DFDB;border-radius:8px;padding:10px 6px;text-align:center">
-            <div style="font-size:16px;margin-bottom:2px;opacity:.5">${a.emoji}</div>
-            <div style="font-size:9px;color:#00695C;font-weight:700;margin-bottom:4px;line-height:1.1">${a.label}</div>
-            <div style="font-size:18px;font-weight:800;color:#00695C">${A.kid[a.key]||0}</div>
-            <div style="font-size:9px;color:#80CBC4">/ ${kids.members}</div>
+            <div style="font-size:16px;margin-bottom:2px">${a.emoji}</div>
+            <div style="font-size:9px;color:${a.color};font-weight:700;margin-bottom:4px;line-height:1.1">${a.label}</div>
+            <div style="font-size:18px;font-weight:800;color:${a.color}">${A.kid[a.key]||0}${a.isSum?' ฿':''}</div>
+            <div style="font-size:9px;color:#80CBC4">${a.isSum?'รวมถวาย':'/ '+kids.members}</div>
           </div>`).join('')}
       </div>
     </div>`;
