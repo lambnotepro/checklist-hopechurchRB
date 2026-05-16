@@ -2120,7 +2120,7 @@ async function churchOnCareChange(sel, unitId) {
 
   tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:16px;color:#999">⏳ กำลังโหลดข้อมูล...</td></tr>';
 
-  // [v4] โหลด WEEKLY_LOG ของ {สัปดาห์+แคร์}
+  // [v8] โหลด WEEKLY_LOG ของ {สัปดาห์+แคร์} — มี fallback หลายชั้น
   let savedRows = [];
   if(dateStr) {
     try {
@@ -2131,13 +2131,28 @@ async function churchOnCareChange(sel, unitId) {
       const r = await fetch(url);
       const d = await r.json();
       if(d.ok) savedRows = d.data || [];
-      console.log('[loadWeekly] '+care+' '+dateStr+' →', savedRows.length, 'rows');
+      console.log('[loadWeekly via API] care='+care+' date='+dateStr+' → '+savedRows.length+' rows');
     } catch(e) {
-      console.warn('[loadWeekly] failed:', e);
+      console.warn('[loadWeekly via API] failed:', e);
     }
   }
   const savedMap = {};
   savedRows.forEach(r => { savedMap[r.id] = r; });
+
+  // [v8] Fallback: ใช้ churchWeeklyRows (โหลดไว้แล้วตอน login) ผสมเข้ามาด้วย
+  // กันกรณี apiGetWeeklyByCare ล้มเหลว หรือ network ช้า
+  const wkN = normalizeDateStr(dateStr);
+  let fallbackCount = 0;
+  (churchWeeklyRows || []).forEach(r => {
+    if(normalizeDateStr(r.date) !== wkN) return;
+    if((r.care||'').trim() !== care.trim()) return;
+    if(!savedMap[r.id]) {
+      savedMap[r.id] = r;
+      fallbackCount++;
+    }
+  });
+  if(fallbackCount > 0) console.log('[loadWeekly via local] เพิ่มอีก '+fallbackCount+' rows จาก churchWeeklyRows');
+  console.log('[loadWeekly] รวม savedMap = '+Object.keys(savedMap).length+' รายการ');
 
   // [v5] แยกผู้ใหญ่ vs ผส. — trim ก่อนเทียบ + รองรับสถานะหลายแบบ
   const careTrim = (care||'').trim();
@@ -2396,7 +2411,8 @@ document.addEventListener('DOMContentLoaded', function() {
   if(mtb) mtb.style.display = 'none';
   var restored = false;
   try {
-    var s = localStorage.getItem('church_sess');
+    // [fix] key ที่ login ใช้คือ 'churchSession' (camelCase) — ต้องอ่านตัวเดียวกัน
+    var s = localStorage.getItem('churchSession') || localStorage.getItem('church_sess');
     if(s) {
       churchSession = JSON.parse(s);
       if(churchSession && churchSession.unit) {
