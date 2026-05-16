@@ -2313,9 +2313,17 @@ async function churchSaveWeekly(unitId) {
 }
 
 async function _smartSync(dateStr, careName, rows) {
+  const tok = (churchSession && churchSession.token) || '';
+  console.log('[smartSync] session:', churchSession);
+  console.log('[smartSync] token length:', tok.length);
+  if(!tok) {
+    apiToast('⚠️ Session หมดอายุ กรุณาล็อกอินใหม่','err');
+    setTimeout(()=>{ try{localStorage.clear();}catch(e){} window.location.reload(); }, 1500);
+    return {ok:false, error:'no token'};
+  }
   const payload = JSON.stringify({
     action: 'smartSyncWeekly',
-    token: (churchSession && churchSession.token) || '',
+    token: tok,
     date: dateStr,
     care: careName,
     rows: rows
@@ -2415,11 +2423,15 @@ document.addEventListener('DOMContentLoaded', function() {
     var s = localStorage.getItem('churchSession') || localStorage.getItem('church_sess');
     if(s) {
       churchSession = JSON.parse(s);
-      if(churchSession && churchSession.unit) {
+      // [v8] ต้องมี token ด้วย ไม่งั้นบันทึกไม่ได้ → บังคับล็อกอินใหม่
+      if(churchSession && churchSession.unit && churchSession.token) {
         var overlay = document.getElementById('login-overlay');
         if(overlay) overlay.style.cssText = 'display:none !important;';
         afterLogin();
         restored = true;
+      } else {
+        console.warn('session missing token → require re-login');
+        try { localStorage.removeItem('churchSession'); localStorage.removeItem('church_sess'); } catch(e){}
       }
     }
   } catch(e){ console.warn('session restore failed:',e); }
