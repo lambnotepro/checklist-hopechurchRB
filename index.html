@@ -1655,7 +1655,15 @@ function computeMemberCounts() {
 }
 
 function renderNewPeopleTable() {
-  // [v10] ใช้ churchNewPeople ตรงๆ (ทุกอำเภอ ทุกหน่วย ในสัปดาห์ที่เลือก)
+  // [v11] ใช้ churchNewPeople ตรงๆ (ทุกอำเภอ ทุกหน่วย ในสัปดาห์ที่เลือก)
+  // นับจำนวนสัปดาห์ที่แต่ละคนมาแล้ว (group by name+nick)
+  const weekCountMap = {};
+  (churchNewPeople||[]).forEach(p => {
+    const key = (String(p.name||'').trim() + '|' + String(p.nick||'').trim()).toLowerCase();
+    if(!weekCountMap[key]) weekCountMap[key] = new Set();
+    weekCountMap[key].add(normalizeDateStr(p.date));
+  });
+
   const wkSel = document.getElementById('db-range');
   const wk = wkSel ? wkSel.value : '';
   const wkN = normalizeDateStr(wk);
@@ -1688,9 +1696,13 @@ function renderNewPeopleTable() {
                     (p.type==='เยี่ยมเยียนพิเศษ'||p.type==='เยี่ยมพิเศษ') ? 'badge-special' :
                     'badge-interest';
       const noteMatch = (p.note||'').match(/ครั้งที่\s*(\d+)/);
-      const cntBadge = noteMatch ? '<span style="background:#E65100;color:#fff;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px">ครั้งที่ '+noteMatch[1]+'</span>' : '';
+      const cntBadge = noteMatch ? '<span style="background:#E65100;color:#fff;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px">บันทึก #'+noteMatch[1]+'</span>' : '';
+      // [v11] นับสัปดาห์ที่มาทั้งหมด (group ตามชื่อ)
+      const key = (String(p.name||'').trim() + '|' + String(p.nick||'').trim()).toLowerCase();
+      const totalWks = weekCountMap[key] ? weekCountMap[key].size : 1;
+      const wkBadge = '<span style="background:#1565C0;color:#fff;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:4px">มาแล้ว '+totalWks+' สัปดาห์</span>';
       body += `<tr style="border-bottom:1px solid #F0F0F0">
-        <td class="L" style="padding:8px 12px"><strong>${p.name||''}</strong> ${p.nick?'<span style="color:#888;font-size:11px">('+p.nick+')</span>':''}${cntBadge}</td>
+        <td class="L" style="padding:8px 12px"><strong>${p.name||''}</strong> ${p.nick?'<span style="color:#888;font-size:11px">('+p.nick+')</span>':''}${cntBadge}${wkBadge}</td>
         <td style="text-align:center"><span class="badge-new ${badge}">${p.type||''}</span></td>
         <td style="text-align:center;font-size:11px">${p.care||''}</td>
         <td style="text-align:center;font-size:11px;color:#666">${p.activity||''}</td>
