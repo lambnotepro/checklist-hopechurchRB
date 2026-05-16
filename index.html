@@ -2109,7 +2109,10 @@ async function churchOnCareChange(sel, unitId) {
   if(!tbody) return;
 
   page.dataset.currentCare = care;
-  page.dataset.currentUnit = (churchSession && churchSession.unit) || '';
+  // [fix] ใช้ unit ของแคร์นั้นๆ ไม่ใช่ unit ของ session — admin จะได้บันทึกในชื่อหน่วยที่ถูก
+  // เพื่อให้หน่วยที่เป็นเจ้าของแคร์สามารถ filter เจอตอน apiGetWeekly
+  const careObj = (churchCares||[]).find(c => (c.name||'').trim() === (care||'').trim());
+  page.dataset.currentUnit = (careObj && careObj.unit) || (churchSession && churchSession.unit) || '';
 
   const wkSelMap = {'pro':'pw','geo':'gw','senior':'sw','inst':'iw'};
   const wkSel = document.getElementById(wkSelMap[unitId]);
