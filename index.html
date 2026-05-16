@@ -1386,7 +1386,7 @@ function renderView1(wk) {
       <div class="dv2-hero-stats">
         <div class="dv2-hero-stat"><div class="num">${careTotal}</div><div class="lab">รวมมาแคร์</div><div class="sub">สมาชิก ${pv.care_total||0} + คนใหม่ ${newCare}</div></div>
         <div class="dv2-hero-stat"><div class="num">${churchTotal}</div><div class="lab">รวมมาโบสถ์</div><div class="sub">สมาชิก ${pv.church_total||0} + คนใหม่ ${newChurch}</div></div>
-        <div class="dv2-hero-stat"><div class="num">${pv.mini_total||0}</div><div class="lab">มินิเซิ้ต</div><div class="sub">มาแค่แคร์ XOR โบสถ์</div></div>
+        <div class="dv2-hero-stat"><div class="num">${pv.mini_total||0}</div><div class="lab">Mini church</div><div class="sub">มาแค่ "แคร์" หรือ "โบสถ์" อย่างใดอย่างหนึ่ง</div></div>
       </div>
     </div>`;
 
@@ -1539,10 +1539,18 @@ function renderWeeklyAttendanceCard(wkStr) {
     </div>`;
   }).join('');
 
-  return `<div class="dv2-card" style="padding:24px">
-    <div class="dv2-card-h" style="font-size:18px;margin-bottom:18px">📋 สรุปรายหน่วย <span class="pill">อาทิตย์ที่ ${wkStr}</span></div>
-    <div style="font-size:12px;color:#8B7355;margin-bottom:14px">นับติ๊กกิจกรรมแต่ละอย่าง · แยกผู้ใหญ่/เด็ก · เลขท้าย / คือจำนวนสมาชิกในระบบ</div>
-    ${rows || '<div style="text-align:center;padding:24px;color:#999;font-size:13px">ยังไม่มีข้อมูลในสัปดาห์นี้</div>'}
+  return `<div style="background:linear-gradient(135deg,#1A1F3A 0%,#2C1B4E 100%);border-radius:16px;padding:24px 26px;color:#fff;margin-bottom:18px;box-shadow:0 4px 16px rgba(0,0,0,.15)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#BFAA8F;letter-spacing:1.5px;text-transform:uppercase">📋 สรุปรายหน่วย</div>
+        <div style="font-size:22px;font-weight:800;color:#fff;margin-top:4px">นับการมาร่วมกิจกรรม</div>
+        <div style="font-size:12px;color:#A89478;margin-top:4px">นับติ๊กกิจกรรมแต่ละอย่าง · แยกผู้ใหญ่/เด็ก · เลขท้าย / = จำนวนสมาชิกในระบบ</div>
+      </div>
+      <div style="background:rgba(255,255,255,.1);padding:6px 14px;border-radius:12px;font-size:11px;color:#FFD700">อาทิตย์ที่ ${wkStr}</div>
+    </div>
+    <div style="background:rgba(255,255,255,.03);padding:18px;border-radius:12px">
+      ${rows || '<div style="text-align:center;padding:24px;color:#A89478;font-size:13px">ยังไม่มีข้อมูลในสัปดาห์นี้</div>'}
+    </div>
   </div>`;
 }
 
@@ -1685,6 +1693,9 @@ function renderUnitCompare() {
     </div>`;
   }).join('');
 
+  // [v13] Mini church donut row — สัดส่วน mini ต่อสมาชิก แต่ละหน่วย
+  const miniRow = renderMiniChurchPerUnit();
+
   return `<div class="dv2-card">
     <div class="dv2-card-h">📊 เปรียบเทียบ มาแคร์ vs มาโบสถ์ (รายหน่วย)</div>
     ${rows}
@@ -1692,6 +1703,81 @@ function renderUnitCompare() {
       <span><span class="dot" style="background:#F2A93B"></span>มาแคร์</span>
       <span><span class="dot" style="background:#5BA9EF"></span>มาโบสถ์</span>
     </div>
+    ${miniRow}
+  </div>`;
+}
+
+// [v13] Mini church donut row — แสดง Mini church ต่อ จำนวนสมาชิกทั้งหมด แต่ละหน่วย
+function renderMiniChurchPerUnit() {
+  const UNIT_COLOR = {
+    'หน่วย Pro':'#1565C0','หน่วยภูมิศาสตร์':'#2E7D32',
+    'หน่วยซีเนียร์':'#6A1B9A','หน่วยสถาบัน':'#BF360C'
+  };
+  // นับ Mini church ต่อหน่วย = สมาชิกที่ติ๊ก church XOR care (มาแค่อย่างใดอย่างหนึ่ง)
+  const wkSel = document.getElementById('db-range');
+  const wkN = normalizeDateStr(wkSel ? wkSel.value : '');
+  const tick = v => v === '✓' || v === '✔' || v === true || v === 1 ||
+                    String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes';
+
+  const miniByUnit = {};
+  Object.keys(UNIT_COLOR).forEach(u => miniByUnit[u] = 0);
+  let kidsMini = 0, totalKids = (churchKids||[]).length;
+
+  (churchWeeklyRows||[]).forEach(r => {
+    if(normalizeDateStr(r.date) !== wkN) return;
+    const isChurch = tick(r.church);
+    const isCare = tick(r.careAtt);
+    if(isChurch === isCare) return;  // XOR: ทั้งคู่หรือไม่มาเลย — ไม่นับ
+    // นับเข้า unit
+    const isKid = String(r.id||'').startsWith('K') || (r.care||'').trim() === 'คจ.เด็ก';
+    if(isKid) {
+      kidsMini++;
+    } else {
+      const u = (r.unit||'').trim();
+      if(miniByUnit.hasOwnProperty(u)) miniByUnit[u]++;
+    }
+  });
+
+  // build donut for each unit + kids
+  const items = Object.entries(DEMO.byUnit).map(([name, u]) => ({
+    name: name,
+    short: name.replace('หน่วย',''),
+    mini: miniByUnit[name] || 0,
+    total: u.members || 0,
+    color: UNIT_COLOR[name] || '#666'
+  }));
+  // เพิ่ม คจ.เด็ก
+  items.push({
+    name: 'คจ.เด็ก', short: 'คจ.เด็ก',
+    mini: kidsMini, total: totalKids,
+    color: '#00897B'
+  });
+
+  // mini donut helper
+  const makeMini = (it) => {
+    const pct = it.total > 0 ? (it.mini/it.total*100) : 0;
+    const r = 30, c = 2 * Math.PI * r;
+    const offset = c - (Math.min(pct,100)/100) * c;
+    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1">
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r="${r}" stroke="#F0E8D8" stroke-width="7" fill="none"/>
+        <circle cx="40" cy="40" r="${r}" stroke="${it.color}" stroke-width="7" fill="none"
+          stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round"
+          transform="rotate(-90 40 40)" style="transition:stroke-dashoffset .8s ease"/>
+        <text x="40" y="38" text-anchor="middle" font-size="14" font-weight="800" fill="${it.color}">${it.mini}</text>
+        <text x="40" y="54" text-anchor="middle" font-size="10" fill="#8B7355">/ ${it.total}</text>
+      </svg>
+      <div style="font-size:11px;font-weight:700;color:${it.color};margin-top:4px;text-align:center">${it.short}</div>
+      <div style="font-size:10px;color:#8B7355">${pct.toFixed(0)}%</div>
+    </div>`;
+  };
+
+  return `<div style="margin-top:20px;padding-top:18px;border-top:1.5px solid #F0E8D8">
+    <div style="font-size:13px;font-weight:700;color:#5C4830;margin-bottom:12px">⛪ Mini church (XOR) ต่อสมาชิก — รายหน่วย</div>
+    <div style="display:flex;gap:8px;align-items:flex-start">
+      ${items.map(makeMini).join('')}
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:#8B7355">💡 Mini church = คนที่มา <strong>แค่ "รอบหลัก"</strong> หรือ <strong>แค่ "แคร์"</strong> อย่างใดอย่างหนึ่ง</div>
   </div>`;
 }
 
@@ -2606,16 +2692,13 @@ async function churchSaveWeekly(unitId) {
   if(!page) return apiToast('❌ ไม่พบหน้า','err');
   const care = page.dataset.currentCare;
   if(!care) return apiToast('⚠️ กรุณาเลือกแคร์ก่อน','err');
-
   const wkSelMap = {'pro':'pw','geo':'gw','senior':'sw','inst':'iw'};
   const wkSel = document.getElementById(wkSelMap[unitId]);
   const dateStr = wkSel ? wkSel.value : '';
   if(!dateStr) return apiToast('⚠️ กรุณาเลือกสัปดาห์','err');
-
   const unit = page.dataset.currentUnit || (churchSession && churchSession.unit) || '';
   const trs = page.querySelectorAll('tr[data-mid]');
   if(!trs.length) return apiToast('⚠️ ไม่มีข้อมูล','err');
-
   const rows = [];
   trs.forEach(tr => {
     const mid = tr.dataset.mid;
@@ -2624,12 +2707,8 @@ async function churchSaveWeekly(unitId) {
     const isKid = tr.dataset.kid === '1' || mid.startsWith('K');
     const rowCare = isKid ? 'คจ.เด็ก' : care;
     const rowUnit = isKid ? care : unit;
-
-    const row = {
-      id: mid, nick, care: rowCare, unit: rowUnit, district,
-      dawn:'', church:'', careAtt:'', lunch:'', ppch:'', david:'',
-      yy: 0, one1: 0, prok: 0, offering: 0
-    };
+    const row = {id:mid, nick, care:rowCare, unit:rowUnit, district,
+      dawn:'',church:'',careAtt:'',lunch:'',ppch:'',david:'',yy:0,one1:0,prok:0,offering:0};
     tr.querySelectorAll('.ck-act').forEach(ck => {
       const f = ck.dataset.fld;
       if(f && (ck.classList.contains('ck-on') || ck.classList.contains('on'))) row[f] = '✓';
@@ -2640,19 +2719,14 @@ async function churchSaveWeekly(unitId) {
     });
     rows.push(row);
   });
-
   let adultCount=0, kidCount=0, hasDataCount=0;
   rows.forEach(r => {
     if((r.id||'').startsWith('K')) kidCount++; else adultCount++;
     if(r.dawn||r.church||r.careAtt||r.lunch||r.ppch||r.david||r.yy||r.one1||r.prok||r.offering) hasDataCount++;
   });
-
   if(!confirm('ยืนยัน Smart Sync เข้า Weekly Log?\n\nสัปดาห์: '+dateStr+'\nแคร์: '+care+'\nผู้ใหญ่: '+adultCount+' / เด็ก: '+kidCount+'\nมีข้อมูล: '+hasDataCount+' แถว')) return;
-
   showLoading(true);
-  let totalIns=0, totalUpd=0, totalDel=0;
-  let errMsg = null;
-
+  let totalIns=0, totalUpd=0, totalDel=0, errMsg=null;
   const adultRows = rows.filter(r => !(r.id||'').startsWith('K'));
   if(adultRows.length > 0) {
     const res = await _smartSync(dateStr, care, adultRows);
@@ -2665,7 +2739,6 @@ async function churchSaveWeekly(unitId) {
     if(res.ok) { totalIns += res.stats.inserted; totalUpd += res.stats.updated; totalDel += res.stats.deleted; }
     else errMsg = res.error;
   }
-
   showLoading(false);
   if(errMsg) apiToast('❌ '+errMsg, 'err');
   else {
@@ -2681,9 +2754,9 @@ async function _smartSync(dateStr, careName, rows) {
     setTimeout(()=>{ try{localStorage.clear();}catch(e){} window.location.reload(); }, 1500);
     return {ok:false, error:'no token'};
   }
-  const payload = JSON.stringify({action: 'smartSyncWeekly', token: tok, date: dateStr, care: careName, rows: rows});
+  const payload = JSON.stringify({action:'smartSyncWeekly', token:tok, date:dateStr, care:careName, rows});
   try {
-    const r = await fetch(CHURCH_API, {method:'POST', mode:'cors', redirect:'follow', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: payload});
+    const r = await fetch(CHURCH_API, {method:'POST', mode:'cors', redirect:'follow', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:payload});
     if(!r.ok) throw new Error('HTTP '+r.status);
     const text = await r.text();
     const d = JSON.parse(text);
@@ -2692,10 +2765,8 @@ async function _smartSync(dateStr, careName, rows) {
   } catch(e) {
     try {
       await fetch(CHURCH_API, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:payload});
-      return {ok:true, stats:{inserted:0,updated:0,deleted:0}, msg:'ส่งแล้วในโหมด no-cors'};
-    } catch(e2) {
-      return {ok:false, error: e.message};
-    }
+      return {ok:true, stats:{inserted:0,updated:0,deleted:0}};
+    } catch(e2) { return {ok:false, error: e.message}; }
   }
 }
 
