@@ -1356,16 +1356,72 @@ function renderUnitDonut() {
     </div>`;
   }).join('');
 
+  // ===== [v9] Right donut: อัตราการมา รอบหลัก/สมาชิก ของแต่ละหน่วย + คจ.เด็ก =====
+  // นับเด็กในแต่ละหน่วย (จาก churchKids + careToUnit) → รวม attendance
+  const KIDS_COLOR = '#00897B';
+  const kidsByUnit = {};
+  ['หน่วย Pro','หน่วยภูมิศาสตร์','หน่วยซีเนียร์','หน่วยสถาบัน'].forEach(u => kidsByUnit[u] = {members:0, church:0});
+  (churchKids||[]).forEach(k => {
+    const careObj = (churchCares||[]).find(c => (c.name||'').trim() === (k.care||'').trim());
+    if(careObj && kidsByUnit[careObj.unit]) kidsByUnit[careObj.unit].members++;
+  });
+  const tick = v => v === '✓' || v === '✔' || v === true || v === 1 ||
+                    String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes';
+  let kidsChurchTotal = 0;
+  (churchWeeklyRows||[]).forEach(r => {
+    if((r.care||'').trim() !== 'คจ.เด็ก') return;
+    if(!tick(r.church)) return;
+    kidsChurchTotal++;
+    const parentCare = (r.unit||'').trim();
+    const careObj = (churchCares||[]).find(c => (c.name||'').trim() === parentCare);
+    if(careObj && kidsByUnit[careObj.unit]) kidsByUnit[careObj.unit].church++;
+  });
+
+  // ทำ mini progress ring 5 อัน (4 หน่วย + คจ.เด็ก)
+  const totalKidsMembers = Object.values(kidsByUnit).reduce((s,k)=>s+k.members,0);
+  const rings = entries.map(([name, u]) => {
+    const pct = u.members > 0 ? (u.church / u.members) * 100 : 0;
+    const color = UNIT_COLOR[name] || '#999';
+    return makeProgressRing(name.replace('หน่วย',''), u.church, u.members, pct, color);
+  }).join('') + makeProgressRing('คจ.เด็ก', kidsChurchTotal, totalKidsMembers,
+                                  totalKidsMembers>0 ? (kidsChurchTotal/totalKidsMembers*100) : 0, KIDS_COLOR);
+
   return `<div class="dv2-card">
-    <div class="dv2-card-h">🥧 สัดส่วนสมาชิกแต่ละหน่วย <span class="pill">${total} คน</span></div>
-    <div class="dv2-donut-wrap">
-      <svg class="dv2-donut-svg" viewBox="0 0 120 120">
-        ${arcs}
-        <text x="60" y="58" class="dv2-donut-center" text-anchor="middle">${total}</text>
-        <text x="60" y="72" class="dv2-donut-sub" text-anchor="middle">รวมทั้งหมด</text>
-      </svg>
-      <div class="dv2-donut-legend">${legend}</div>
+    <div class="dv2-card-h">🥧 สัดส่วนสมาชิก + อัตราการมาโบสถ์ <span class="pill">${total} คน + เด็ก ${totalKidsMembers}</span></div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center">
+      <!-- LEFT: existing donut -->
+      <div class="dv2-donut-wrap" style="display:flex;flex-direction:column;align-items:center;gap:10px">
+        <svg class="dv2-donut-svg" viewBox="0 0 120 120">
+          ${arcs}
+          <text x="60" y="58" class="dv2-donut-center" text-anchor="middle">${total}</text>
+          <text x="60" y="72" class="dv2-donut-sub" text-anchor="middle">รวมทั้งหมด</text>
+        </svg>
+        <div class="dv2-donut-legend">${legend}</div>
+      </div>
+      <!-- RIGHT: attendance rings -->
+      <div style="padding-left:16px;border-left:1.5px solid #F0E8D8">
+        <div style="font-size:12px;font-weight:700;color:#5C4830;margin-bottom:12px">⛪ อัตราการมา รอบหลัก ต่อสมาชิก</div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center">${rings}</div>
+      </div>
     </div>
+  </div>`;
+}
+
+// Helper: progress ring (donut เปอร์เซ็นต์)
+function makeProgressRing(label, val, total, pct, color) {
+  const r = 32, c = 2 * Math.PI * r;
+  const offset = c - (Math.min(pct,100)/100) * c;
+  return `<div style="display:flex;flex-direction:column;align-items:center">
+    <svg width="80" height="80" viewBox="0 0 80 80">
+      <circle cx="40" cy="40" r="${r}" stroke="#F0E8D8" stroke-width="8" fill="none"/>
+      <circle cx="40" cy="40" r="${r}" stroke="${color}" stroke-width="8" fill="none"
+        stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round"
+        transform="rotate(-90 40 40)" style="transition:stroke-dashoffset .8s ease"/>
+      <text x="40" y="38" text-anchor="middle" font-size="14" font-weight="800" fill="${color}">${val}</text>
+      <text x="40" y="54" text-anchor="middle" font-size="10" fill="#8B7355">/ ${total}</text>
+    </svg>
+    <div style="font-size:11px;font-weight:700;color:${color};margin-top:4px;line-height:1.2">${label}</div>
+    <div style="font-size:10px;color:#8B7355">${pct.toFixed(0)}%</div>
   </div>`;
 }
 
@@ -2203,15 +2259,35 @@ async function churchOnCareChange(sel, unitId) {
   renderInterestedToNewPeople(unitId, interested);
   renderKidsTable(unitId, care);
 
-  // [v4] restore kids ด้วย
-  setTimeout(() => {
+  // [v9] restore kids — ดึงแยกผ่าน apiGetWeeklyByCare(care="คจ.เด็ก") แล้ว filter unit=current care
+  setTimeout(async () => {
+    let kidSavedRows = [];
+    if(dateStr) {
+      try {
+        const tok = (churchSession && churchSession.token) || '';
+        const url = CHURCH_API + '?action=weeklyByCare&token=' + encodeURIComponent(tok)
+          + '&date=' + encodeURIComponent(dateStr)
+          + '&care=' + encodeURIComponent('คจ.เด็ก');
+        const r = await fetch(url);
+        const d = await r.json();
+        if(d.ok) {
+          // filter เฉพาะเด็กที่มี parent care = current care
+          kidSavedRows = (d.data||[]).filter(k => (k.unit||'').trim() === care.trim());
+        }
+        console.log('[loadKids via API] care="คจ.เด็ก" unit='+care+' → '+kidSavedRows.length+' rows');
+      } catch(e) { console.warn('[loadKids] failed:', e); }
+    }
+    // fallback: scan churchWeeklyRows
+    (churchWeeklyRows||[]).forEach(r => {
+      if(normalizeDateStr(r.date) !== normalizeDateStr(dateStr)) return;
+      if((r.care||'').trim() !== 'คจ.เด็ก') return;
+      if((r.unit||'').trim() !== care.trim()) return;
+      if(!kidSavedRows.find(k => k.id === r.id)) kidSavedRows.push(r);
+    });
+
     const kidsRows = (churchKids||[]).filter(k => k.care === care);
     kidsRows.forEach(k => {
-      const savedKid = savedRows.find(r => r.id === k.id) ||
-                       (churchWeeklyRows||[]).find(r =>
-                         normalizeDateStr(r.date) === dateStr &&
-                         r.id === k.id &&
-                         (r.care === 'คจ.เด็ก' || r.unit === care));
+      const savedKid = kidSavedRows.find(r => r.id === k.id);
       if(!savedKid) return;
       const tr = page.querySelector('.kids-section tr[data-mid="'+k.id+'"]');
       if(!tr) return;
@@ -2229,7 +2305,7 @@ async function churchOnCareChange(sel, unitId) {
         if(inp) inp.value = Number(savedKid[fld]) || 0;
       });
     });
-  }, 30);
+  }, 100);
 
   if(savedRows.length > 0) {
     apiToast('📥 โหลดข้อมูลเดิม '+savedRows.length+' แถว', 'ok');
@@ -2363,13 +2439,12 @@ async function churchSaveWeeklyKids() {
 
   const rows = [];
   trs.forEach(tr => {
-    // [fix] เด็ก: care="คจ.เด็ก", unit=แคร์ผปค. (parent care) — สอดคล้องกับฝั่งหน่วย
     const parentCare = tr.dataset.care || '';
     const row = {date:dateStr, id:tr.dataset.mid, nick:tr.dataset.nick||'',
       care:'คจ.เด็ก', unit:parentCare, district:tr.dataset.district||'',
       dawn:'',church:'',careAtt:'',lunch:'',ppch:'',david:'',yy:0,one1:0,prok:0,offering:0};
     tr.querySelectorAll('.ck-act').forEach(ck=>{
-      if(ck.dataset.fld && ck.classList.contains('ck-on')) row[ck.dataset.fld] = '✓';
+      if(ck.dataset.fld && (ck.classList.contains('ck-on') || ck.classList.contains('on'))) row[ck.dataset.fld] = '✓';
     });
     tr.querySelectorAll('input[type="number"]').forEach(inp=>{
       if(inp.dataset.fld) row[inp.dataset.fld] = parseInt(inp.value)||0;
@@ -2381,23 +2456,9 @@ async function churchSaveWeeklyKids() {
   if(!confirm('ยืนยันบันทึก '+rows.length+' แถว (คจ.เด็ก) เข้า Weekly Log\nสัปดาห์: '+dateStr+' ?')) return;
 
   showLoading(true);
-  const payload = JSON.stringify({action:'smartSyncWeekly', token:(churchSession&&churchSession.token)||'', date:dateStr, care:'คจ.เด็ก', rows});
-  try {
-    const r = await fetch(CHURCH_API, {method:'POST', mode:'cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:payload});
-    const text = await r.text();
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const d = JSON.parse(text);
-    if(d.ok) apiToast('✅ บันทึก '+rows.length+' แถว (คจ.เด็ก) สำเร็จ','ok');
-    else throw new Error(d.error||'unknown');
-  } catch(e) {
-    console.error('saveKids err:',e);
-    try {
-      await fetch(CHURCH_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:payload});
-      apiToast('⚠️ ส่งแล้วในโหมด no-cors','err');
-    } catch(e2) {
-      apiToast('❌ บันทึกไม่สำเร็จ: '+e.message,'err');
-    }
-  }
+  const res = await _smartSync(dateStr, 'คจ.เด็ก', rows);
+  if(res.ok) apiToast('✅ บันทึก '+rows.length+' แถว (คจ.เด็ก) สำเร็จ','ok');
+  else apiToast('❌ '+res.error,'err');
   showLoading(false);
 }
 
@@ -2413,17 +2474,14 @@ function apiToast(msg,type){
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 
-// ===== INIT =====
 document.addEventListener('DOMContentLoaded', function() {
   var mtb = document.getElementById('main-tab-bar');
   if(mtb) mtb.style.display = 'none';
   var restored = false;
   try {
-    // [fix] key ที่ login ใช้คือ 'churchSession' (camelCase) — ต้องอ่านตัวเดียวกัน
     var s = localStorage.getItem('churchSession') || localStorage.getItem('church_sess');
     if(s) {
       churchSession = JSON.parse(s);
-      // [v8] ต้องมี token ด้วย ไม่งั้นบันทึกไม่ได้ → บังคับล็อกอินใหม่
       if(churchSession && churchSession.unit && churchSession.token) {
         var overlay = document.getElementById('login-overlay');
         if(overlay) overlay.style.cssText = 'display:none !important;';
