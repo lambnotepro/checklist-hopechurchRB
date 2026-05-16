@@ -2340,7 +2340,10 @@ async function churchSaveWeeklyKids() {
 
   const rows = [];
   trs.forEach(tr => {
-    const row = {date:dateStr, id:tr.dataset.mid, nick:tr.dataset.nick||'', care:tr.dataset.care||'', unit:'คริสตจักรเด็ก', district:tr.dataset.district||'',
+    // [fix] เด็ก: care="คจ.เด็ก", unit=แคร์ผปค. (parent care) — สอดคล้องกับฝั่งหน่วย
+    const parentCare = tr.dataset.care || '';
+    const row = {date:dateStr, id:tr.dataset.mid, nick:tr.dataset.nick||'',
+      care:'คจ.เด็ก', unit:parentCare, district:tr.dataset.district||'',
       dawn:'',church:'',careAtt:'',lunch:'',ppch:'',david:'',yy:0,one1:0,prok:0,offering:0};
     tr.querySelectorAll('.ck-act').forEach(ck=>{
       if(ck.dataset.fld && ck.classList.contains('ck-on')) row[ck.dataset.fld] = '✓';
