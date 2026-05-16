@@ -807,20 +807,32 @@ function renderKidRow(k, idx, parentCare) {
 
 // ==================== NEW PEOPLE TABLE ====================
 function renderInterestedToNewPeople(unitId, interested) {
+  // [v13] render ผส. members ลงตาราง — เก็บ manual rows ไว้
   const tbodyIdMap = {pro:'pnm', geo:'gnm', senior:'snm', inst:'inm'};
   const tb = document.getElementById(tbodyIdMap[unitId]);
   if(!tb) return;
-  if(interested.length === 0) {
+  // ล้างเฉพาะ er + ผส. rows เก่า (เก็บ manual ที่กำลังกรอก)
+  Array.from(tb.querySelectorAll('tr')).forEach(tr => {
+    if(tr.classList.contains('er')) tr.remove();
+    else if(tr.dataset.psm === '1') tr.remove();
+  });
+  // เพิ่ม ผส. ใหม่
+  interested.forEach(m => {
+    const tr = document.createElement('tr');
+    tr.dataset.psm = '1';  // mark as ผส. from MEMBERS
+    tr.dataset.mid = m.id;
+    tr.style.background = '#F3E5F5';
+    tr.innerHTML = `<td class="L">${m.name||''} (${m.nick||''})</td>
+      <td><span class="bx" style="background:#F3E5F5;color:#6A1B9A">${m.status||'ผส.'}</span></td>
+      <td>${m.care||''}</td>
+      <td style="font-size:11px;color:#888">${m.note||''}</td>
+      <td><button class="db" onclick="delNM(this)">🗑</button></td>`;
+    tb.appendChild(tr);
+  });
+  // ถ้าว่างเปล่า แสดง er
+  if(tb.children.length === 0) {
     tb.innerHTML = '<tr class="er"><td colspan="5">ยังไม่มีคนใหม่ กด เพิ่มรายชื่อ</td></tr>';
-    return;
   }
-  tb.innerHTML = interested.map((m,i)=> `<tr data-mid="${m.id}">
-    <td class="L">${m.name||''} (${m.nick||''})</td>
-    <td><span class="bx" style="background:#F3E5F5;color:#6A1B9A">${m.status||'ผส.'}</span></td>
-    <td>${m.care||''}</td>
-    <td style="font-size:11px;color:#888">${m.note||''}</td>
-    <td><button class="db" onclick="delNM(this)">🗑</button></td>
-  </tr>`).join('');
 }
 
 function addNM(tbodyId) {
@@ -986,13 +998,14 @@ function restoreNewPeopleTable(unitId, dateStr, opts) {
   });
   console.log('[restoreNewPeople] unit=', unit, 'date=', dateStr, '→', saved.length, 'rows');
 
-  // ล้างทั้งหมด (er + manual + saved-display) → render ใหม่
+  // [v13] ล้างเฉพาะ er + saved rows (data-saved) — เก็บ manual + ผส. (data-psm)
   if(opts.clearManual) {
-    tb.innerHTML = '';
-  } else {
-    // ล้างเฉพาะ er + saved-display (เก็บ manual ที่กำลังกรอก)
     Array.from(tb.querySelectorAll('tr')).forEach(tr => {
-      if(tr.classList.contains('er') || !tr.dataset.manual) tr.remove();
+      if(tr.classList.contains('er') || tr.dataset.manual === '1' || tr.dataset.saved === '1') tr.remove();
+    });
+  } else {
+    Array.from(tb.querySelectorAll('tr')).forEach(tr => {
+      if(tr.classList.contains('er') || tr.dataset.saved === '1') tr.remove();
     });
   }
 
@@ -1002,6 +1015,7 @@ function restoreNewPeopleTable(unitId, dateStr, opts) {
   }
   saved.forEach(p => {
     const tr = document.createElement('tr');
+    tr.dataset.saved = '1';  // [v13] mark as saved from NEW_PEOPLE
     tr.style.background = '#FFF8E1';
     const unitBadge = isAdmin ? '<div style="font-size:9px;color:#999;margin-top:2px">'+(p.unit||'')+'</div>' : '';
     tr.innerHTML = `
@@ -1346,15 +1360,33 @@ function renderDash() {
 
 function renderView1(wk) {
   const pv = DEMO.province;
+  // [v13] นับคนใหม่สัปดาห์นี้ที่ "กิจกรรม" ระบุว่ามาแคร์/รอบหลัก
+  const wkN = normalizeDateStr(wk);
+  const newPplWk = (churchNewPeople||[]).filter(p => normalizeDateStr(p.date) === wkN);
+  let newCare = 0, newChurch = 0;
+  newPplWk.forEach(p => {
+    const a = String(p.activity||'');
+    if(a.indexOf('แคร์') >= 0) newCare++;
+    if(a.indexOf('รอบหลัก') >= 0) newChurch++;
+  });
+  const careTotal = (pv.care_total||0) + newCare;
+  const churchTotal = (pv.church_total||0) + newChurch;
+  // มินิเซิ้ตยังคงคำนวณจาก WEEKLY_LOG (XOR ของ church/care ติ๊ก)
+
+  const heroNewBadge = newPplWk.length > 0
+    ? `<div class="dv2-hero-label" style="color:#FFD700;margin-top:6px">+ คนใหม่ ${newPplWk.length} (มาแคร์ ${newCare} / มาโบสถ์ ${newChurch})</div>`
+    : '';
+
   const hero = `
     <div class="dv2-hero">
       <div class="dv2-hero-label">อาทิตย์ที่ ${wk}</div>
       <div class="dv2-hero-date">ภาพรวมจังหวัด</div>
-      <div class="dv2-hero-sub">รวมทุกอำเภอ ทุกหน่วย</div>
+      <div class="dv2-hero-sub">รวมทุกอำเภอ ทุกหน่วย — สมาชิก + คนใหม่</div>
+      ${heroNewBadge}
       <div class="dv2-hero-stats">
-        <div class="dv2-hero-stat"><div class="num">${pv.care_total}</div><div class="lab">รวมมาแคร์</div><div class="sub">${pv.care_adult} ผู้ใหญ่ + ${pv.care_kids} เด็ก</div></div>
-        <div class="dv2-hero-stat"><div class="num">${pv.church_total}</div><div class="lab">รวมมาโบสถ์</div><div class="sub">${pv.church_adult} ผู้ใหญ่ + ${pv.church_kids} เด็ก</div></div>
-        <div class="dv2-hero-stat"><div class="num">${pv.mini_total}</div><div class="lab">มินิเซิ้ต</div><div class="sub">มาแค่แคร์ XOR โบสถ์</div></div>
+        <div class="dv2-hero-stat"><div class="num">${careTotal}</div><div class="lab">รวมมาแคร์</div><div class="sub">สมาชิก ${pv.care_total||0} + คนใหม่ ${newCare}</div></div>
+        <div class="dv2-hero-stat"><div class="num">${churchTotal}</div><div class="lab">รวมมาโบสถ์</div><div class="sub">สมาชิก ${pv.church_total||0} + คนใหม่ ${newChurch}</div></div>
+        <div class="dv2-hero-stat"><div class="num">${pv.mini_total||0}</div><div class="lab">มินิเซิ้ต</div><div class="sub">มาแค่แคร์ XOR โบสถ์</div></div>
       </div>
     </div>`;
 
@@ -2512,6 +2544,8 @@ async function churchOnCareChange(sel, unitId) {
   ensureSaveButton(page, unitId);
   renderInterestedToNewPeople(unitId, interested);
   renderKidsTable(unitId, care);
+  // [v13] โหลดคนใหม่ที่บันทึกไว้ใน NEW_PEOPLE (สัปดาห์นี้+หน่วยนี้) → แสดงในตาราง
+  if(dateStr) restoreNewPeopleTable(unitId, dateStr);
 
   // [v9] restore kids — ดึงแยกผ่าน apiGetWeeklyByCare(care="คจ.เด็ก") แล้ว filter unit=current care
   setTimeout(async () => {
