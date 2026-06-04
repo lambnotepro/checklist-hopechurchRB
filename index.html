@@ -1447,7 +1447,7 @@ function renderWeeklyAttendanceCard(wkStr) {
                     String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes';
 
   const kidsByUnit = {};
-  Object.keys(UNIT_COLOR).forEach(u => kidsByUnit[u] = {church:0, care:0, members:0});
+  Object.keys(UNIT_COLOR).forEach(u => kidsByUnit[u] = {church:0, care:0, members:0, union:0});
   // นับสมาชิกเด็ก (จาก churchKids)
   (churchKids||[]).forEach(k => {
     const careObj = (churchCares||[]).find(c => (c.name||'').trim() === (k.care||'').trim());
@@ -1465,6 +1465,7 @@ function renderWeeklyAttendanceCard(wkStr) {
     if(!bu) return;
     if(tick(r.church)) bu.church++;
     if(tick(r.careAtt)) bu.care++;
+    if(tick(r.church) || tick(r.careAtt)) bu.union++;   // [v16] union เด็ก
   });
 
   // [v7+] สรุปรายหน่วย — นับกิจกรรม checklist แต่ละกิจกรรม แยกผู้ใหญ่/เด็ก
@@ -1536,7 +1537,7 @@ function renderWeeklyAttendanceCard(wkStr) {
 
   const rows = Object.entries(DEMO.byUnit).map(([unitName, u]) => {
     if(u.members === 0) return '';
-    const kids = kidsByUnit[unitName] || {church:0, care:0, members:0};
+    const kids = kidsByUnit[unitName] || {church:0, care:0, members:0, union:0};
     const adultMembers = Math.max(0, u.members - kids.members);
     const color = UNIT_COLOR[unitName] || '#666';
     const A = actByUnit[unitName] || {adult:{}, kid:{}};
@@ -1549,29 +1550,29 @@ function renderWeeklyAttendanceCard(wkStr) {
       <div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid ${color}33">
         <div style="font-weight:800;color:${color};font-size:20px;margin-bottom:8px">${unitName}</div>
         <div style="display:inline-block;background:${color};color:#fff;border-radius:10px;padding:9px 16px;font-size:16px;font-weight:800;box-shadow:0 2px 8px ${color}66;line-height:1.35">
-          ⛪ Mini church · ผู้ใหญ่ ${miniAdult}${newCnt>0?` (+${newCnt} คนใหม่)`:''} &nbsp;·&nbsp; 👧 เด็ก ${kids.members}
+          ⛪ Mini church · ผู้ใหญ่ ${miniAdult + newCnt}${newCnt>0?` (+${newCnt} คนใหม่)`:''} &nbsp;·&nbsp; 👧 เด็ก ${kids.union}
         </div>
       </div>
 
       <div style="font-size:11px;color:#5C4830;font-weight:600;margin-bottom:6px">👤 ผู้ใหญ่</div>
       <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px">
         ${ACTIVITIES.map(a => `
-          <div style="background:${a.color}11;border:1px solid ${a.color}33;border-radius:8px;padding:10px 6px;text-align:center">
-            <div style="font-size:16px;margin-bottom:2px">${a.emoji}</div>
-            <div style="font-size:9px;color:${a.color};font-weight:700;margin-bottom:4px;line-height:1.1">${a.label}</div>
-            <div style="font-size:18px;font-weight:800;color:${a.color}">${A.adult[a.key]||0}</div>
-            <div style="font-size:9px;color:#999">/ ${adultMembers}</div>
+          <div style="background:${a.color};border-radius:8px;padding:12px 6px;text-align:center;box-shadow:0 1px 5px ${a.color}55">
+            <div style="font-size:18px;margin-bottom:2px">${a.emoji}</div>
+            <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;line-height:1.15">${a.label}</div>
+            <div style="font-size:24px;font-weight:900;color:#fff">${A.adult[a.key]||0}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.85)">/ ${adultMembers}</div>
           </div>`).join('')}
       </div>
 
       <div style="font-size:11px;color:#00695C;font-weight:600;margin-bottom:6px">👧 เด็ก (คจ.เด็ก) <span style="color:#80CBC4;font-weight:500">— เฉพาะ 3 กิจกรรม</span></div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
         ${KID_ACTIVITIES.map(a => `
-          <div style="background:#E0F2F1;border:1px solid #B2DFDB;border-radius:8px;padding:10px 6px;text-align:center">
-            <div style="font-size:16px;margin-bottom:2px">${a.emoji}</div>
-            <div style="font-size:9px;color:${a.color};font-weight:700;margin-bottom:4px;line-height:1.1">${a.label}</div>
-            <div style="font-size:18px;font-weight:800;color:${a.color}">${A.kid[a.key]||0}${a.isSum?' ฿':''}</div>
-            <div style="font-size:9px;color:#80CBC4">${a.isSum?'รวมถวาย':'/ '+kids.members}</div>
+          <div style="background:${a.color};border-radius:8px;padding:12px 6px;text-align:center;box-shadow:0 1px 5px ${a.color}55">
+            <div style="font-size:18px;margin-bottom:2px">${a.emoji}</div>
+            <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;line-height:1.15">${a.label}</div>
+            <div style="font-size:24px;font-weight:900;color:#fff">${A.kid[a.key]||0}${a.isSum?' ฿':''}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.85)">${a.isSum?'รวมถวาย':'/ '+kids.members}</div>
           </div>`).join('')}
       </div>
     </div>`;
