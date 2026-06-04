@@ -1292,7 +1292,7 @@ function aggregateForWeek(wkStr) {
       pv.care_total++;
       if(isKid) pv.care_kids++; else pv.care_adult++;
     }
-    if(wentChurch !== wentCare) {
+    if(wentChurch || wentCare) {   // [v14] Union: มาโบสถ์ หรือ มาแคร์ (นับคนละ 1 ไม่ซ้ำ)
       if(u) u.mini++;
       if(uc) uc.mini++;
       if(bc) bc.mini++;
@@ -1371,7 +1371,9 @@ function renderView1(wk) {
   });
   const careTotal = (pv.care_total||0) + newCare;
   const churchTotal = (pv.church_total||0) + newChurch;
-  // มินิเซิ้ตยังคงคำนวณจาก WEEKLY_LOG (XOR ของ church/care ติ๊ก)
+  // [v14] Mini church = Union (สมาชิกที่มาโบสถ์ หรือ แคร์) + คนใหม่ทุกคนของสัปดาห์ · นับคนละ 1 ไม่ซ้ำ
+  const newMini = newPplWk.length;
+  const miniTotal = (pv.mini_total||0) + newMini;
 
   const heroNewBadge = newPplWk.length > 0
     ? `<div class="dv2-hero-label" style="color:#FFD700;margin-top:6px">+ คนใหม่ ${newPplWk.length} (มาแคร์ ${newCare} / มาโบสถ์ ${newChurch})</div>`
@@ -1386,7 +1388,7 @@ function renderView1(wk) {
       <div class="dv2-hero-stats">
         <div class="dv2-hero-stat"><div class="num">${careTotal}</div><div class="lab">รวมมาแคร์</div><div class="sub">สมาชิก ${pv.care_total||0} + คนใหม่ ${newCare}</div></div>
         <div class="dv2-hero-stat"><div class="num">${churchTotal}</div><div class="lab">รวมมาโบสถ์</div><div class="sub">สมาชิก ${pv.church_total||0} + คนใหม่ ${newChurch}</div></div>
-        <div class="dv2-hero-stat"><div class="num">${pv.mini_total||0}</div><div class="lab">Mini church</div><div class="sub">มาแค่ "แคร์" หรือ "โบสถ์" อย่างใดอย่างหนึ่ง</div></div>
+        <div class="dv2-hero-stat"><div class="num">${miniTotal}</div><div class="lab">Mini church</div><div class="sub">มาโบสถ์ หรือ แคร์ (นับคนละ 1 ไม่ซ้ำ) + คนใหม่ ${newMini}</div></div>
       </div>
     </div>`;
 
@@ -1400,6 +1402,7 @@ function renderView1(wk) {
       <div class="dv2-stat"><div class="ic">🏠</div><div class="num" style="color:#1565C0">${counts.leaders}</div><div class="lab">ผู้นำ</div><div class="sub">หนน./หนค./พล.</div></div>
       <div class="dv2-stat"><div class="ic">⛪</div><div class="num" style="color:#2E7D32">${counts.members}</div><div class="lab">สมาชิก</div><div class="sub">สช./ผช./คจ.เด็ก</div></div>
       <div class="dv2-stat"><div class="ic">💔</div><div class="num" style="color:#9E9E9E">${counts.inactive}</div><div class="lab">ห่างเหิน</div><div class="sub">สถ./ผถ.</div></div>
+      <div class="dv2-stat"><div class="ic">🌱</div><div class="num" style="color:#E65100">${newPplWk.length}</div><div class="lab">คนใหม่</div><div class="sub">สัปดาห์นี้ · ทุกหน่วย</div></div>
     </div>
   </div>`;
 
@@ -1510,6 +1513,15 @@ function renderWeeklyAttendanceCard(wkStr) {
     }
   });
 
+  // [v14] นับคนใหม่รายหน่วยของสัปดาห์นี้ (ทุกประเภท)
+  const newByUnit = {};
+  Object.keys(UNIT_COLOR).forEach(u => newByUnit[u] = 0);
+  (churchNewPeople||[]).forEach(p => {
+    if(normalizeDateStr(p.date) !== wkNorm) return;
+    const u = (p.unit||'').trim();
+    if(newByUnit.hasOwnProperty(u)) newByUnit[u]++;
+  });
+
   const rows = Object.entries(DEMO.byUnit).map(([unitName, u]) => {
     if(u.members === 0) return '';
     const kids = kidsByUnit[unitName] || {church:0, care:0, members:0};
@@ -1518,16 +1530,18 @@ function renderWeeklyAttendanceCard(wkStr) {
     const A = actByUnit[unitName] || {adult:{}, kid:{}};
     const totalAdult = ACTIVITIES.reduce((s,a)=>s+(A.adult[a.key]||0),0);
     const totalKid   = KID_ACTIVITIES.reduce((s,a)=>s+(a.isSum ? 0 : (A.kid[a.key]||0)),0);
+    const newCnt = newByUnit[unitName] || 0;   // [v14] คนใหม่รายหน่วย
 
     return `<div style="border:1.5px solid ${color}22;border-radius:12px;padding:16px;margin-bottom:14px;background:linear-gradient(135deg,#fff 0%,${color}05 100%)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid ${color}22">
         <div>
           <div style="font-weight:800;color:${color};font-size:18px">${unitName}</div>
-          <div style="font-size:11px;color:#8B7355;margin-top:2px">สมาชิกในระบบ: ผู้ใหญ่ ${adultMembers} + เด็ก ${kids.members} = <strong>${u.members}</strong> คน</div>
+          <div style="font-size:11px;color:#8B7355;margin-top:2px">สมาชิกในระบบ: ผู้ใหญ่ ${adultMembers} · เด็ก ${kids.members} <span style="color:#B0A089">(แยกนับ)</span></div>
         </div>
         <div style="text-align:right">
           <div style="font-size:11px;color:#8B7355">รวมติ๊กสัปดาห์นี้</div>
-          <div style="font-size:14px;font-weight:700;color:${color}">ผู้ใหญ่ ${totalAdult} + เด็ก ${totalKid}</div>
+          <div style="font-size:14px;font-weight:700;color:${color}">ผู้ใหญ่ ${totalAdult}${newCnt>0?` <span style="color:#E65100">+${newCnt} คนใหม่</span>`:''}</div>
+          <div style="font-size:12px;font-weight:600;color:#00695C;margin-top:2px">👧 คจ.เด็ก ${totalKid}</div>
         </div>
       </div>
 
@@ -1729,7 +1743,7 @@ function renderMiniChurchPerUnit() {
     'หน่วย Pro':'#1565C0','หน่วยภูมิศาสตร์':'#2E7D32',
     'หน่วยซีเนียร์':'#6A1B9A','หน่วยสถาบัน':'#BF360C'
   };
-  // นับ Mini church ต่อหน่วย = สมาชิกที่ติ๊ก church XOR care (มาแค่อย่างใดอย่างหนึ่ง)
+  // [v14] นับ Mini church ต่อหน่วย = สมาชิกที่ติ๊ก church หรือ care (Union — มาอย่างน้อย 1 อย่าง) + คนใหม่
   const wkSel = document.getElementById('db-range');
   const wkN = normalizeDateStr(wkSel ? wkSel.value : '');
   const tick = v => v === '✓' || v === '✔' || v === true || v === 1 ||
@@ -1743,7 +1757,7 @@ function renderMiniChurchPerUnit() {
     if(normalizeDateStr(r.date) !== wkN) return;
     const isChurch = tick(r.church);
     const isCare = tick(r.careAtt);
-    if(isChurch === isCare) return;  // XOR: ทั้งคู่หรือไม่มาเลย — ไม่นับ
+    if(!isChurch && !isCare) return;  // [v14] Union: ข้ามเฉพาะคนที่ไม่มาเลยทั้งคู่
     // นับเข้า unit
     const isKid = String(r.id||'').startsWith('K') || (r.care||'').trim() === 'คจ.เด็ก';
     if(isKid) {
@@ -1752,6 +1766,13 @@ function renderMiniChurchPerUnit() {
       const u = (r.unit||'').trim();
       if(miniByUnit.hasOwnProperty(u)) miniByUnit[u]++;
     }
+  });
+
+  // [v14] รวมคนใหม่ทุกคนของสัปดาห์ เข้าแต่ละหน่วย (นับเป็น Mini church ด้วย)
+  (churchNewPeople||[]).forEach(p => {
+    if(normalizeDateStr(p.date) !== wkN) return;
+    const u = (p.unit||'').trim();
+    if(miniByUnit.hasOwnProperty(u)) miniByUnit[u]++;
   });
 
   // build donut for each unit + kids
@@ -1789,11 +1810,11 @@ function renderMiniChurchPerUnit() {
   };
 
   return `<div style="margin-top:20px;padding-top:18px;border-top:1.5px solid #F0E8D8">
-    <div style="font-size:13px;font-weight:700;color:#5C4830;margin-bottom:12px">⛪ Mini church (XOR) ต่อสมาชิก — รายหน่วย</div>
+    <div style="font-size:13px;font-weight:700;color:#5C4830;margin-bottom:12px">⛪ Mini church ต่อสมาชิก — รายหน่วย</div>
     <div style="display:flex;gap:8px;align-items:flex-start">
       ${items.map(makeMini).join('')}
     </div>
-    <div style="margin-top:10px;font-size:11px;color:#8B7355">💡 Mini church = คนที่มา <strong>แค่ "รอบหลัก"</strong> หรือ <strong>แค่ "แคร์"</strong> อย่างใดอย่างหนึ่ง</div>
+    <div style="margin-top:10px;font-size:11px;color:#8B7355">💡 Mini church = คนที่มา <strong>"รอบหลัก"</strong> หรือ <strong>"แคร์"</strong> (อย่างน้อย 1 อย่าง · นับคนละ 1 ไม่ซ้ำ) + คนใหม่</div>
   </div>`;
 }
 
