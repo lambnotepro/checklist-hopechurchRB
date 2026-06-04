@@ -1251,7 +1251,7 @@ function aggregateForWeek(wkStr) {
   console.log('[aggregate] week='+wkStr+' → '+rowsAll.length+' rows');
 
   const careDistrict = {};
-  (churchCares || []).forEach(c => { careDistrict[c.name] = c.district; });
+  (churchCares || []).forEach(c => { careDistrict[(c.name||'').trim()] = c.district; });
 
   const tick = v => v === '✓' || v === '✔' || v === true || v === 1 ||
                        String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes';
@@ -1260,12 +1260,12 @@ function aggregateForWeek(wkStr) {
     const isKid = String(r.id || '').startsWith('K') || r.care === 'คจ.เด็ก';
     let bigUnit, parentCare;
     if(isKid) {
-      parentCare = r.unit || '';
-      const careObj = (churchCares||[]).find(c => c.name === parentCare);
+      parentCare = (r.unit || '').trim();
+      const careObj = (churchCares||[]).find(c => (c.name||'').trim() === parentCare);
       bigUnit = careObj ? careObj.unit : '';
     } else {
-      bigUnit = r.unit || '';
-      parentCare = r.care || '';
+      bigUnit = (r.unit || '').trim();
+      parentCare = (r.care || '').trim();
     }
 
     const u = DEMO.byUnit[bigUnit];
@@ -1349,6 +1349,7 @@ function renderDash() {
 
   const cont = document.getElementById('dash-content');
   if(!cont) return;
+  if(!churchDataReady){ cont.innerHTML = '<div style="padding:48px;text-align:center;color:#8B7355;font-size:15px">⏳ กำลังโหลดข้อมูล… ระบบจะแสดงผลให้อัตโนมัติเมื่อโหลดเสร็จ</div>'; return; }
   if(view === '1') cont.innerHTML = renderView1(wk);
   else if(view === '2') cont.innerHTML = renderView2(wk);
   else cont.innerHTML = renderView3(wk);
@@ -2354,6 +2355,7 @@ function bindWeekChangeListeners() {
 }
 
 // ==================== LOAD ALL DATA ====================
+var churchDataReady = false;   // [v17] ธงบอกว่าโหลดข้อมูลเสร็จหรือยัง
 async function churchLoadAll() {
   try {
     await Promise.all([
@@ -2366,6 +2368,12 @@ async function churchLoadAll() {
   } catch(e) {
     console.error('churchLoadAll error:', e);
     apiToast('⚠️ โหลดข้อมูลบางส่วนล้มเหลว', 'err');
+  }
+  // [v17] ข้อมูลพร้อมแล้ว — ถ้าหน้า Dashboard เปิดอยู่ ให้ render ใหม่อัตโนมัติ (กันเลข 0 ตอนโหลดไม่ทัน)
+  churchDataReady = true;
+  var _dp = document.getElementById('pg-dash');
+  if(_dp && _dp.classList.contains('active') && typeof renderDash === 'function') {
+    try { renderDash(); } catch(e) {}
   }
 }
 
@@ -2772,21 +2780,25 @@ async function churchSaveWeekly(unitId) {
   });
   if(!confirm('ยืนยัน Smart Sync เข้า Weekly Log?\n\nสัปดาห์: '+dateStr+'\nแคร์: '+care+'\nผู้ใหญ่: '+adultCount+' / เด็ก: '+kidCount+'\nมีข้อมูล: '+hasDataCount+' แถว')) return;
   showLoading(true);
-  let totalIns=0, totalUpd=0, totalDel=0, errMsg=null;
+  let totalIns=0, totalUpd=0, totalDel=0, errMsg=null, unconfirmed=false;
   const adultRows = rows.filter(r => !(r.id||'').startsWith('K'));
   if(adultRows.length > 0) {
     const res = await _smartSync(dateStr, care, adultRows);
-    if(res.ok) { totalIns += res.stats.inserted; totalUpd += res.stats.updated; totalDel += res.stats.deleted; }
+    if(res.ok) { totalIns += res.stats.inserted; totalUpd += res.stats.updated; totalDel += res.stats.deleted; if(res.unconfirmed) unconfirmed=true; }
     else errMsg = res.error;
   }
   const kidRows = rows.filter(r => (r.id||'').startsWith('K'));
   if(kidRows.length > 0 && !errMsg) {
     const res = await _smartSync(dateStr, 'คจ.เด็ก', kidRows);
-    if(res.ok) { totalIns += res.stats.inserted; totalUpd += res.stats.updated; totalDel += res.stats.deleted; }
+    if(res.ok) { totalIns += res.stats.inserted; totalUpd += res.stats.updated; totalDel += res.stats.deleted; if(res.unconfirmed) unconfirmed=true; }
     else errMsg = res.error;
   }
   showLoading(false);
   if(errMsg) apiToast('❌ '+errMsg, 'err');
+  else if(unconfirmed) {
+    apiToast('📤 ส่งข้อมูลแล้ว — กำลังตรวจสอบผล (โหลดใหม่อัตโนมัติ)', 'ok');
+    churchLoadWeekly();
+  }
   else {
     apiToast('✅ Sync: เพิ่ม '+totalIns+' / อัปเดต '+totalUpd+' / ลบ '+totalDel, 'ok');
     churchLoadWeekly();
@@ -2811,7 +2823,7 @@ async function _smartSync(dateStr, careName, rows) {
   } catch(e) {
     try {
       await fetch(CHURCH_API, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:payload});
-      return {ok:true, stats:{inserted:0,updated:0,deleted:0}};
+      return {ok:true, unconfirmed:true, stats:{inserted:0,updated:0,deleted:0}};   // [v17] บันทึกแล้วแต่อ่านผลไม่ได้
     } catch(e2) { return {ok:false, error: e.message}; }
   }
 }
@@ -2841,7 +2853,8 @@ async function churchSaveWeeklyKids() {
   if(!confirm('ยืนยันบันทึก '+rows.length+' แถว (คจ.เด็ก) เข้า Weekly Log\nสัปดาห์: '+dateStr+' ?')) return;
   showLoading(true);
   const res = await _smartSync(dateStr, 'คจ.เด็ก', rows);
-  if(res.ok) apiToast('✅ บันทึก '+rows.length+' แถว (คจ.เด็ก) สำเร็จ','ok');
+  if(res.ok && res.unconfirmed) apiToast('📤 ส่งข้อมูลแล้ว — กำลังตรวจสอบผล','ok');
+  else if(res.ok) apiToast('✅ บันทึก '+rows.length+' แถว (คจ.เด็ก) สำเร็จ','ok');
   else apiToast('❌ '+res.error,'err');
   showLoading(false);
 }
