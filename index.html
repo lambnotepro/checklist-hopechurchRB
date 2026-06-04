@@ -1522,6 +1522,18 @@ function renderWeeklyAttendanceCard(wkStr) {
     if(newByUnit.hasOwnProperty(u)) newByUnit[u]++;
   });
 
+  // [v15] Mini church (union) ผู้ใหญ่รายหน่วย = สมาชิกผู้ใหญ่ที่มาโบสถ์ หรือ แคร์ (นับคนละ 1 ไม่ซ้ำ)
+  const unionAdultByUnit = {};
+  Object.keys(UNIT_COLOR).forEach(u => unionAdultByUnit[u] = 0);
+  (churchWeeklyRows||[]).forEach(r => {
+    if(normalizeDateStr(r.date) !== wkNorm) return;
+    const isKid = String(r.id||'').startsWith('K') || (r.care||'').trim() === 'คจ.เด็ก';
+    if(isKid) return;
+    const u = (r.unit||'').trim();
+    if(!unionAdultByUnit.hasOwnProperty(u)) return;
+    if(tick(r.church) || tick(r.careAtt)) unionAdultByUnit[u]++;
+  });
+
   const rows = Object.entries(DEMO.byUnit).map(([unitName, u]) => {
     if(u.members === 0) return '';
     const kids = kidsByUnit[unitName] || {church:0, care:0, members:0};
@@ -1531,17 +1543,13 @@ function renderWeeklyAttendanceCard(wkStr) {
     const totalAdult = ACTIVITIES.reduce((s,a)=>s+(A.adult[a.key]||0),0);
     const totalKid   = KID_ACTIVITIES.reduce((s,a)=>s+(a.isSum ? 0 : (A.kid[a.key]||0)),0);
     const newCnt = newByUnit[unitName] || 0;   // [v14] คนใหม่รายหน่วย
+    const miniAdult = unionAdultByUnit[unitName] || 0;   // [v15] Mini church (union) ผู้ใหญ่
 
-    return `<div style="border:1.5px solid ${color}22;border-radius:12px;padding:16px;margin-bottom:14px;background:linear-gradient(135deg,#fff 0%,${color}05 100%)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid ${color}22">
-        <div>
-          <div style="font-weight:800;color:${color};font-size:18px">${unitName}</div>
-          <div style="font-size:11px;color:#8B7355;margin-top:2px">สมาชิกในระบบ: ผู้ใหญ่ ${adultMembers} · เด็ก ${kids.members} <span style="color:#B0A089">(แยกนับ)</span></div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:11px;color:#8B7355">รวมติ๊กสัปดาห์นี้</div>
-          <div style="font-size:14px;font-weight:700;color:${color}">ผู้ใหญ่ ${totalAdult}${newCnt>0?` <span style="color:#E65100">+${newCnt} คนใหม่</span>`:''}</div>
-          <div style="font-size:12px;font-weight:600;color:#00695C;margin-top:2px">👧 คจ.เด็ก ${totalKid}</div>
+    return `<div style="border:1.5px solid ${color}44;border-radius:12px;padding:16px;margin-bottom:14px;background:linear-gradient(135deg,#fff 0%,${color}08 100%)">
+      <div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid ${color}33">
+        <div style="font-weight:800;color:${color};font-size:20px;margin-bottom:8px">${unitName}</div>
+        <div style="display:inline-block;background:${color};color:#fff;border-radius:10px;padding:9px 16px;font-size:16px;font-weight:800;box-shadow:0 2px 8px ${color}66;line-height:1.35">
+          ⛪ Mini church · ผู้ใหญ่ ${miniAdult}${newCnt>0?` (+${newCnt} คนใหม่)`:''} &nbsp;·&nbsp; 👧 เด็ก ${kids.members}
         </div>
       </div>
 
