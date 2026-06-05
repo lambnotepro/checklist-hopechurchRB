@@ -246,6 +246,31 @@ tbody td.L{text-align:center;padding-left:4px;}
 .momentum-stat .lab{font-size:10px;color:#8B7355;font-weight:600;}
 .momentum-stat .val{font-size:18px;font-weight:800;line-height:1.1;}
 
+
+/* [v18] การ์ด Dashboard ใต้สรุปรายหน่วย: พื้นหลังเข้ม สีไม่ซ้ำ อ่านง่าย */
+.dv2-card.dvk,.momentum-card.dvk{border:none!important;box-shadow:0 5px 18px rgba(0,0,0,.30)!important;color:#F2ECE0!important;}
+.dvk1{background:linear-gradient(135deg,#20264a,#34214f)!important;}
+.dvk2{background:linear-gradient(135deg,#0f3b2d,#0c5040)!important;}
+.dvk3{background:linear-gradient(135deg,#4a2410,#6e3712)!important;}
+.dvk4{background:linear-gradient(135deg,#16395d,#114a72)!important;}
+.dvk5{background:linear-gradient(135deg,#491340,#5f1248)!important;}
+.dvk6{background:linear-gradient(135deg,#2f3b18,#46541a)!important;}
+.dvk .dv2-card-h,.dvk .momentum-title{color:#fff!important;}
+.dvk .dv2-cmp-head .name{color:#fff!important;}
+.dvk .dv2-cmp-head .slash{color:#cfc4ae!important;}
+.dvk .dv2-legend,.dvk .momentum-legend .ln{color:#E8DDCB!important;}
+.dvk .dv2-donut-legend .ln{color:#F2ECE0!important;}
+.dvk .dv2-donut-legend .ln .pc{color:#CDBB9C!important;}
+.dvk .dv2-donut-center{fill:#fff!important;}
+.dvk .dv2-donut-sub{fill:#CDBB9C!important;}
+.dvk .dv2-unit-section{background:rgba(255,255,255,.08)!important;}
+.dvk .dv2-unit-name{color:#fff!important;}
+.dvk .dv2-unit-row .nm{color:#E0D4BE!important;}
+.dvk .momentum-sub{color:#CDBB9C!important;}
+.dvk .momentum-stat{background:rgba(255,255,255,.09)!important;color:#F2ECE0!important;}
+.dvk .momentum-svg text{fill:#CDBB9C!important;}
+.dvk .new-people-table td{color:#F2ECE0!important;border-color:rgba(255,255,255,.14)!important;}
+.dvk .new-people-table thead th{color:#CDBB9C!important;border-color:rgba(255,255,255,.18)!important;}
 </style>
 </head>
 <body>
@@ -1397,7 +1422,7 @@ function renderView1(wk) {
   const weeklyAttendance = renderWeeklyAttendanceCard(wk);
 
   const counts = computeMemberCounts();
-  const rosterSection = `<div class="dv2-card">
+  const rosterSection = `<div class="dv2-card dvk dvk1">
     <div class="dv2-card-h">👥 รายชื่อสมาชิกทั้งหมด <span class="pill">${counts.total} คน</span></div>
     <div class="dv2-grid2">
       <div class="dv2-stat"><div class="ic">🏠</div><div class="num" style="color:#1565C0">${counts.leaders}</div><div class="lab">ผู้นำ</div><div class="sub">หนน./หนค./พล.</div></div>
@@ -1413,7 +1438,7 @@ function renderView1(wk) {
     if(!(String(r.id||'').startsWith('K') || r.care === 'คจ.เด็ก')) return false;
     return r.church === '✓' || r.careAtt === '✓';   // เด็กที่มาอย่างใดอย่างหนึ่ง
   }).length;
-  const activities = `<div class="dv2-card">
+  const activities = `<div class="dv2-card dvk dvk2">
     <div class="dv2-card-h">🌱 กิจกรรมสัปดาห์นี้</div>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
       <div class="dv2-stat" style="padding:14px 8px"><div class="ic">🟠</div><div class="num" style="color:#F2A93B">${pv.new_interest}</div><div class="lab" style="font-size:11px">ผู้สนใจ</div></div>
@@ -1669,7 +1694,7 @@ function renderUnitDonut() {
   }).join('') + makeProgressRing('คจ.เด็ก', kidsChurchTotal, totalKidsMembers,
                                   totalKidsMembers>0 ? (kidsChurchTotal/totalKidsMembers*100) : 0, KIDS_COLOR);
 
-  return `<div class="dv2-card">
+  return `<div class="dv2-card dvk dvk3">
     <div class="dv2-card-h">🥧 สัดส่วนสมาชิก + อัตราการมาโบสถ์ <span class="pill">${total} คน + เด็ก ${totalKidsMembers}</span></div>
     <div style="display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:center">
       <!-- LEFT: existing donut -->
@@ -1736,7 +1761,7 @@ function renderUnitCompare() {
   // [v13] Mini church donut row — สัดส่วน mini ต่อสมาชิก แต่ละหน่วย
   const miniRow = renderMiniChurchPerUnit();
 
-  return `<div class="dv2-card">
+  return `<div class="dv2-card dvk dvk4">
     <div class="dv2-card-h">📊 เปรียบเทียบ มาแคร์ vs มาโบสถ์ (รายหน่วย)</div>
     ${rows}
     <div class="dv2-legend">
@@ -1855,7 +1880,7 @@ function renderNewPeopleTable() {
   const wkN = normalizeDateStr(wk);
   const list = (churchNewPeople||[]).filter(p => normalizeDateStr(p.date) === wkN);
   if(list.length === 0) {
-    return `<div class="dv2-card">
+    return `<div class="dv2-card dvk dvk6">
       <div class="dv2-card-h">🌱 รายชื่อคนใหม่สัปดาห์นี้ <span class="pill">0 คน</span></div>
       <div style="text-align:center;padding:18px;color:#999;font-size:13px">ยังไม่มีคนใหม่ในสัปดาห์นี้</div>
     </div>`;
@@ -1897,7 +1922,7 @@ function renderNewPeopleTable() {
     });
   });
 
-  return `<div class="dv2-card">
+  return `<div class="dv2-card dvk dvk6">
     <div class="dv2-card-h">🌱 รายชื่อคนใหม่ทุกหน่วย <span class="pill">${list.length} คน</span></div>
     <table class="new-people-table" style="width:100%">
       <thead><tr>
@@ -2051,7 +2076,7 @@ const MOMENTUM_COLORS = {
 
 function renderMomentumCard() {
   return `
-  <div class="momentum-card">
+  <div class="momentum-card dvk dvk5">
     <div class="momentum-head">
       <span class="momentum-title">🚀 แรงเหวี่ยง — คนใหม่ที่เข้ามาในคริสตจักร</span>
       <select class="momentum-period-sel" id="momentum-period" onchange="redrawMomentum()">
