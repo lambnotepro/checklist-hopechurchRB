@@ -554,7 +554,6 @@ tbody td.L{text-align:center;padding-left:4px;}
       <select class="db-sel" id="db-view" onchange="renderDash()">
         <option value="1">🌐 ภาพรวมจังหวัด (รวมทุกอำเภอ)</option>
         <option value="2">🌏 แยกอำเภอ</option>
-        <option value="3">🏠 แยกแต่ละหน่วย</option>
       </select></div>
     <div class="cg"><label>📅 ช่วงเวลา</label>
       <select class="db-sel-sm" id="db-period" onchange="renderDash()">
@@ -1282,6 +1281,7 @@ function aggregateForWeek(wkStr) {
                        String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes';
 
   rowsAll.forEach(r => {
+    if(isMetaOfferingRow(r)) return;   // [v19] ข้ามแถวยอดถวายพิเศษ (เงินถวายวันอาทิตย์/อนุสรณ์)
     const isKid = String(r.id || '').startsWith('K') || r.care === 'คจ.เด็ก';
     let bigUnit, parentCare;
     if(isKid) {
@@ -1375,13 +1375,80 @@ function renderDash() {
   const cont = document.getElementById('dash-content');
   if(!cont) return;
   if(!churchDataReady){ cont.innerHTML = '<div style="padding:48px;text-align:center;color:#8B7355;font-size:15px">⏳ กำลังโหลดข้อมูล… ระบบจะแสดงผลให้อัตโนมัติเมื่อโหลดเสร็จ</div>'; return; }
-  if(view === '1') cont.innerHTML = renderView1(wk);
-  else if(view === '2') cont.innerHTML = renderView2(wk);
-  else cont.innerHTML = renderView3(wk);
+  if(view === '2') cont.innerHTML = renderView2(wk);
+  else cont.innerHTML = renderView1(wk);   // [v19] เอา view 3 (แยกแต่ละหน่วย) ออก — รวมอยู่ในภาพรวมจังหวัดแล้ว
 
   setTimeout(()=>{
     redrawMomentum();
   }, 50);
+}
+
+// ==================== [v19] HELPERS: คนใหม่ + ยอดถวายพิเศษ ====================
+function isMetaOfferingRow(r){ return String((r && r.id) || '').indexOf('OFFER_') === 0; }
+
+function parseNewPersonActivity(p){
+  const a = String((p && p.activity) || '');
+  const res = {dawn:0, church:0, lunch:0, ppch:0, careAtt:0, offering:0};
+  if(a.indexOf('รุ่งอรุณ') >= 0) res.dawn = 1;
+  if(a.indexOf('รอบหลัก') >= 0) res.church = 1;
+  if(a.indexOf('อาหารเที่ยง') >= 0) res.lunch = 1;
+  if(a.indexOf('พพช.') >= 0) res.ppch = 1;
+  if(a.indexOf('แคร์') >= 0) res.careAtt = 1;
+  const m = a.match(/ถวาย\s*([\d,]+)/);
+  if(m) res.offering = parseInt(m[1].replace(/,/g,'')) || 0;
+  return res;
+}
+
+function sumNewPeopleOffering(wkN){
+  let total = 0;
+  (churchNewPeople||[]).forEach(p => { if(normalizeDateStr(p.date) === wkN) total += parseNewPersonActivity(p).offering; });
+  return total;
+}
+
+function offeringExtraLocal(wk){ try { return JSON.parse(localStorage.getItem('church_offering_'+wk) || '{}'); } catch(e){ return {}; } }
+function offeringExtraFromSheet(wk){
+  const wkN = normalizeDateStr(wk);
+  const out = {};
+  (churchWeeklyRows||[]).forEach(r => {
+    if(!isMetaOfferingRow(r)) return;
+    if(normalizeDateStr(r.date) !== wkN) return;
+    if(r.id === 'OFFER_SUNDAY')   out.sunday   = Number(r.offering) || 0;
+    if(r.id === 'OFFER_MEMORIAL') out.memorial = Number(r.offering) || 0;
+  });
+  return out;
+}
+function getOfferingExtra(wk){
+  const sheet = offeringExtraFromSheet(wk);
+  const local = offeringExtraLocal(wk);
+  const pick = (a, b) => (a != null ? a : (b != null ? b : ''));
+  return { sunday: pick(sheet.sunday, local.sunday), memorial: pick(sheet.memorial, local.memorial) };
+}
+async function churchSaveOfferingExtra(){
+  const wkSel = document.getElementById('db-range');
+  const wk = wkSel ? wkSel.value : '';
+  if(!wk) return;
+  const sunday   = parseInt((document.getElementById('off-sunday')   || {}).value) || 0;
+  const memorial = parseInt((document.getElementById('off-memorial') || {}).value) || 0;
+  try { localStorage.setItem('church_offering_'+wk, JSON.stringify({sunday, memorial})); } catch(e){}
+  const grandEl = document.getElementById('off-grand');
+  if(grandEl){
+    const base = parseInt(grandEl.dataset.base) || 0;
+    grandEl.textContent = '฿' + (base + sunday + memorial).toLocaleString();
+  }
+  if(typeof _smartSync === 'function' && churchSession && churchSession.token){
+    const rows = [
+      {id:'OFFER_SUNDAY',   nick:'เงินถวายวันอาทิตย์', care:'ภาพรวม-ถวาย', unit:'ภาพรวม', district:'', dawn:'',church:'',careAtt:'',lunch:'',ppch:'',david:'',yy:0,one1:0,prok:0, offering:sunday},
+      {id:'OFFER_MEMORIAL', nick:'อนุสรณ์พระพร',      care:'ภาพรวม-ถวาย', unit:'ภาพรวม', district:'', dawn:'',church:'',careAtt:'',lunch:'',ppch:'',david:'',yy:0,one1:0,prok:0, offering:memorial}
+    ];
+    try {
+      const res = await _smartSync(wk, 'ภาพรวม-ถวาย', rows);
+      if(res && res.ok && !res.unconfirmed){ apiToast('💾 บันทึกยอดถวายขึ้น Sheet แล้ว','ok'); if(typeof churchLoadWeekly==='function') churchLoadWeekly(); }
+      else if(res && res.ok){ apiToast('📤 ส่งยอดถวายขึ้น Sheet แล้ว (กำลังตรวจสอบ)','ok'); }
+      else { apiToast('💾 บันทึกในเครื่องแล้ว (Sheet: '+((res&&res.error)||'ไม่ตอบ')+')',''); }
+    } catch(e){ apiToast('💾 บันทึกในเครื่องแล้ว (ออฟไลน์)',''); }
+  } else {
+    apiToast('💾 บันทึกยอดถวายแล้ว','ok');
+  }
 }
 
 function renderView1(wk) {
@@ -1401,6 +1468,14 @@ function renderView1(wk) {
   const newMini = newPplWk.length;
   const miniTotal = (pv.mini_total||0) + newMini;
 
+  // [v19] ยอดถวายรวมทั้งจังหวัด + ช่องกรอกพิเศษ (เงินถวายวันอาทิตย์ / อนุสรณ์พระพร)
+  const newOfferAll = sumNewPeopleOffering(wkN);
+  const offeringBase = (pv.offering_total||0) + newOfferAll;
+  const offExtra = getOfferingExtra(wk);
+  const offSunday = (offExtra.sunday===''||offExtra.sunday==null) ? '' : offExtra.sunday;
+  const offMemorial = (offExtra.memorial===''||offExtra.memorial==null) ? '' : offExtra.memorial;
+  const offeringGrand = offeringBase + (parseInt(offExtra.sunday)||0) + (parseInt(offExtra.memorial)||0);
+
   const heroNewBadge = newPplWk.length > 0
     ? `<div class="dv2-hero-label" style="color:#FFD700;margin-top:6px">+ คนใหม่ ${newPplWk.length} (มาแคร์ ${newCare} / มาโบสถ์ ${newChurch})</div>`
     : '';
@@ -1415,6 +1490,21 @@ function renderView1(wk) {
         <div class="dv2-hero-stat"><div class="num">${careTotal}</div><div class="lab">รวมมาแคร์</div><div class="sub">สมาชิก ${pv.care_total||0} + คนใหม่ ${newCare}</div></div>
         <div class="dv2-hero-stat"><div class="num">${churchTotal}</div><div class="lab">รวมมาโบสถ์</div><div class="sub">สมาชิก ${pv.church_total||0} + คนใหม่ ${newChurch}</div></div>
         <div class="dv2-hero-stat"><div class="num">${miniTotal}</div><div class="lab">Mini church</div><div class="sub">มาโบสถ์ หรือ แคร์ (นับคนละ 1 ไม่ซ้ำ) + คนใหม่ ${newMini}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:10px;margin-top:12px">
+        <div style="background:rgba(242,169,59,.12);border:1px solid rgba(242,169,59,.35);border-radius:10px;padding:12px 14px">
+          <div style="font-size:12px;color:#FFE6B8;font-weight:700;margin-bottom:4px">💰 รวมยอดถวายรวม</div>
+          <div id="off-grand" data-base="${offeringBase}" style="font-size:26px;font-weight:800;color:#F2A93B;line-height:1">฿${offeringGrand.toLocaleString()}</div>
+          <div style="font-size:10px;color:#A89478;margin-top:3px">เช็คลิสต์+คนใหม่ ฿${offeringBase.toLocaleString()} + ช่องกรอก</div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border-radius:10px;padding:10px 14px">
+          <div style="font-size:11px;color:#FFE6B8;font-weight:700;margin-bottom:6px">🧺 เงินถวายวันอาทิตย์</div>
+          <input id="off-sunday" type="number" min="0" inputmode="numeric" value="${offSunday}" placeholder="0" onchange="churchSaveOfferingExtra()" style="width:100%;padding:8px 10px;border:1.5px solid rgba(242,169,59,.4);border-radius:8px;background:rgba(0,0,0,.28);color:#FFF7E6;font-family:inherit;font-size:16px;font-weight:700;text-align:right">
+        </div>
+        <div style="background:rgba(255,255,255,.05);border-radius:10px;padding:10px 14px">
+          <div style="font-size:11px;color:#FFE6B8;font-weight:700;margin-bottom:6px">🙏 อนุสรณ์พระพร</div>
+          <input id="off-memorial" type="number" min="0" inputmode="numeric" value="${offMemorial}" placeholder="0" onchange="churchSaveOfferingExtra()" style="width:100%;padding:8px 10px;border:1.5px solid rgba(242,169,59,.4);border-radius:8px;background:rgba(0,0,0,.28);color:#FFF7E6;font-family:inherit;font-size:16px;font-weight:700;text-align:right">
+        </div>
       </div>
     </div>`;
 
@@ -1549,6 +1639,38 @@ function renderWeeklyAttendanceCard(wkStr) {
     if(newByUnit.hasOwnProperty(u)) newByUnit[u]++;
   });
 
+  // [v19] กิจกรรมตัวเลข (เยี่ยมเยียน/ใช้เวลา/ประกาศ) + ยอดถวายผู้ใหญ่(สมาชิก) รายหน่วย
+  const numByUnit = {};
+  const adultOfferByUnit = {};
+  Object.keys(UNIT_COLOR).forEach(u => { numByUnit[u] = {yy:0,one1:0,prok:0}; adultOfferByUnit[u] = 0; });
+  (churchWeeklyRows||[]).forEach(r => {
+    if(isMetaOfferingRow(r)) return;
+    if(normalizeDateStr(r.date) !== wkNorm) return;
+    const isKidR = String(r.id||'').startsWith('K') || (r.care||'').trim() === 'คจ.เด็ก';
+    if(isKidR) return;
+    const u = (r.unit||'').trim();
+    if(!numByUnit[u]) return;
+    numByUnit[u].yy   += (+r.yy   || 0);
+    numByUnit[u].one1 += (+r.one1 || 0);
+    numByUnit[u].prok += (+r.prok || 0);
+    adultOfferByUnit[u] += (+r.offering || 0);
+  });
+
+  const newActByUnit = {};
+  Object.keys(UNIT_COLOR).forEach(u => newActByUnit[u] = {dawn:0,church:0,lunch:0,ppch:0,careAtt:0,offering:0});
+  (churchNewPeople||[]).forEach(p => {
+    if(normalizeDateStr(p.date) !== wkNorm) return;
+    const u = (p.unit||'').trim();
+    if(!newActByUnit[u]) return;
+    const a = parseNewPersonActivity(p);
+    newActByUnit[u].dawn    += a.dawn;
+    newActByUnit[u].church  += a.church;
+    newActByUnit[u].lunch   += a.lunch;
+    newActByUnit[u].ppch    += a.ppch;
+    newActByUnit[u].careAtt += a.careAtt;
+    newActByUnit[u].offering+= a.offering;
+  });
+
   // [v15] Mini church (union) ผู้ใหญ่รายหน่วย = สมาชิกผู้ใหญ่ที่มาโบสถ์ หรือ แคร์ (นับคนละ 1 ไม่ซ้ำ)
   const unionAdultByUnit = {};
   Object.keys(UNIT_COLOR).forEach(u => unionAdultByUnit[u] = 0);
@@ -1567,28 +1689,52 @@ function renderWeeklyAttendanceCard(wkStr) {
     const adultMembers = Math.max(0, u.members - kids.members);
     const color = UNIT_COLOR[unitName] || '#666';
     const A = actByUnit[unitName] || {adult:{}, kid:{}};
-    const totalAdult = ACTIVITIES.reduce((s,a)=>s+(A.adult[a.key]||0),0);
-    const totalKid   = KID_ACTIVITIES.reduce((s,a)=>s+(a.isSum ? 0 : (A.kid[a.key]||0)),0);
+    const NEW = newActByUnit[unitName] || {dawn:0,church:0,lunch:0,ppch:0,careAtt:0,offering:0};
+    const NUM = numByUnit[unitName] || {yy:0,one1:0,prok:0};
     const newCnt = newByUnit[unitName] || 0;   // [v14] คนใหม่รายหน่วย
     const miniAdult = unionAdultByUnit[unitName] || 0;   // [v15] Mini church (union) ผู้ใหญ่
+    const adultVal = (k) => (A.adult[k]||0) + (NEW[k]||0);   // [v19] ผู้ใหญ่ = สมาชิก + คนใหม่
+    const adultOffering = (adultOfferByUnit[unitName]||0) + (NEW.offering||0);
+    const kidOffering = (A.kid && A.kid.offering) || 0;
+    const unitOffering = adultOffering + kidOffering;
 
     return `<div style="border:1.5px solid ${color}44;border-radius:12px;padding:16px;margin-bottom:14px;background:linear-gradient(135deg,#fff 0%,${color}08 100%)">
       <div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1.5px solid ${color}33">
         <div style="font-weight:800;color:${color};font-size:20px;margin-bottom:8px">${unitName}</div>
-        <div style="display:inline-block;background:${color};color:#fff;border-radius:10px;padding:9px 16px;font-size:16px;font-weight:800;box-shadow:0 2px 8px ${color}66;line-height:1.35">
-          ⛪ Mini church · ผู้ใหญ่ ${miniAdult + newCnt}${newCnt>0?` (+${newCnt} คนใหม่)`:''} &nbsp;·&nbsp; 👧 เด็ก ${kids.union}
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+          <div style="display:inline-block;background:${color};color:#fff;border-radius:10px;padding:9px 16px;font-size:16px;font-weight:800;box-shadow:0 2px 8px ${color}66;line-height:1.35">
+            ⛪ Mini church · ผู้ใหญ่ ${miniAdult + newCnt}${newCnt>0?` (+${newCnt} คนใหม่)`:''} &nbsp;·&nbsp; 👧 เด็ก ${kids.union}
+          </div>
+          <div style="display:inline-block;background:#880E4F;color:#fff;border-radius:10px;padding:9px 16px;font-size:15px;font-weight:800;box-shadow:0 2px 8px #880E4F66;line-height:1.35">
+            💰 รวมถวายหน่วยนี้ ฿${unitOffering.toLocaleString()} <span style="font-size:11px;font-weight:600;opacity:.85">(ผู้ใหญ่ ฿${adultOffering.toLocaleString()} · เด็ก ฿${kidOffering.toLocaleString()})</span>
+          </div>
         </div>
       </div>
 
-      <div style="font-size:11px;color:#5C4830;font-weight:600;margin-bottom:6px">👤 ผู้ใหญ่</div>
-      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px">
+      <div style="font-size:11px;color:#5C4830;font-weight:600;margin-bottom:6px">👤 ผู้ใหญ่ <span style="color:#A89478;font-weight:500">— รวมคนใหม่แล้ว</span></div>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:8px">
         ${ACTIVITIES.map(a => `
           <div style="background:${a.color};border-radius:8px;padding:12px 6px;text-align:center;box-shadow:0 1px 5px ${a.color}55">
             <div style="font-size:18px;margin-bottom:2px">${a.emoji}</div>
             <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;line-height:1.15">${a.label}</div>
-            <div style="font-size:24px;font-weight:900;color:#fff">${A.adult[a.key]||0}</div>
+            <div style="font-size:24px;font-weight:900;color:#fff">${adultVal(a.key)}</div>
             <div style="font-size:10px;color:rgba(255,255,255,.85)">/ ${adultMembers}</div>
           </div>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px">
+        ${[{key:'yy',label:'เยี่ยมเยียน',color:'#1565C0',emoji:'💗'},{key:'one1',label:'ใช้เวลา 1:1',color:'#6A1B9A',emoji:'⏱️'},{key:'prok',label:'ประกาศ',color:'#37474F',emoji:'📣'}].map(a => `
+          <div style="background:${a.color};border-radius:8px;padding:11px 6px;text-align:center;box-shadow:0 1px 5px ${a.color}55">
+            <div style="font-size:16px;margin-bottom:2px">${a.emoji}</div>
+            <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;line-height:1.15">${a.label}</div>
+            <div style="font-size:22px;font-weight:900;color:#fff">${NUM[a.key]||0}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.85)">คน</div>
+          </div>`).join('')}
+        <div style="background:#880E4F;border-radius:8px;padding:11px 6px;text-align:center;box-shadow:0 1px 5px #880E4F55">
+          <div style="font-size:16px;margin-bottom:2px">💰</div>
+          <div style="font-size:11px;color:#fff;font-weight:800;margin-bottom:4px;line-height:1.15">ถวาย (ผู้ใหญ่)</div>
+          <div style="font-size:20px;font-weight:900;color:#fff">฿${adultOffering.toLocaleString()}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.85)">รวมถวาย</div>
+        </div>
       </div>
 
       <div style="font-size:11px;color:#00695C;font-weight:600;margin-bottom:6px">👧 เด็ก (คจ.เด็ก) <span style="color:#80CBC4;font-weight:500">— เฉพาะ 3 กิจกรรม</span></div>
@@ -1938,19 +2084,44 @@ function renderNewPeopleTable() {
 }
 
 function renderView2(wk) {
-  // [v5] แยกอำเภอ — แตกหน่วยย่อยใน card
+  // [v5/v19] แยกอำเภอ — แตกหน่วยย่อย + ประกาศ + คจ.เด็ก + การ์ดรวมทุกอำเภอ
+  const UNIT_COLOR = {
+    'หน่วย Pro':'#1565C0','หน่วยภูมิศาสตร์':'#2E7D32',
+    'หน่วยซีเนียร์':'#6A1B9A','หน่วยสถาบัน':'#BF360C'
+  };
+  const isAllDist = (n) => /ทุกอำเภอ|รวมทุกอำเภอ/.test(n||'');
+  const tick = v => v === '✓' || v === '✔' || v === true || v === 1 ||
+                    String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes';
+
   let html = `<div class="dv2">
     <div class="dv2-hero">
       <div class="dv2-hero-label">อาทิตย์ที่ ${wk}</div>
       <div class="dv2-hero-date">แยกตามอำเภอ</div>
-      <div class="dv2-hero-sub">แสดงผลย่อยรายหน่วยในแต่ละอำเภอ</div>
+      <div class="dv2-hero-sub">รายหน่วยย่อยในแต่ละอำเภอ — รวม คจ.เด็ก แล้ว · มีการ์ด "รวมทุกอำเภอ" ท้ายสุด</div>
     </div>
     <div class="district-grid">`;
 
-  // หาหน่วยที่อยู่ในแต่ละอำเภอ
-  const districtToUnits = {};  // {district: {unit: {church, care, mini, offering, members}}}
+  // [v19] นับการมาของ คจ.เด็ก แยกตามอำเภอ (จาก WEEKLY_LOG → อำเภอของแคร์ผู้ปกครอง)
+  const careDistrict = {};
+  (churchCares||[]).forEach(c => { careDistrict[(c.name||'').trim()] = c.district; });
+  const kidsAttByDist = {};
+  (churchWeeklyRows||[]).forEach(r => {
+    if(isMetaOfferingRow(r)) return;
+    if(normalizeDateStr(r.date) !== normalizeDateStr(wk)) return;
+    const isKid = String(r.id||'').startsWith('K') || (r.care||'').trim() === 'คจ.เด็ก';
+    if(!isKid) return;
+    const parentCare = (r.unit||'').trim();
+    const dist = careDistrict[parentCare] || r.district || '';
+    if(!dist || isAllDist(dist)) return;
+    if(!kidsAttByDist[dist]) kidsAttByDist[dist] = {church:0, care:0};
+    if(tick(r.church)) kidsAttByDist[dist].church++;
+    if(tick(r.careAtt)) kidsAttByDist[dist].care++;
+  });
+
+  // หาหน่วยที่อยู่ในแต่ละอำเภอ (byCare รวมเด็กแล้ว) — ข้าม placeholder "ทุกอำเภอ"
+  const districtToUnits = {};
   Object.entries(DEMO.byCare).forEach(([careName, c]) => {
-    if(!c.district) return;
+    if(!c.district || isAllDist(c.district)) return;
     if(!districtToUnits[c.district]) districtToUnits[c.district] = {};
     if(!districtToUnits[c.district][c.unit]) {
       districtToUnits[c.district][c.unit] = {church:0, care:0, mini:0, offering:0, members:0};
@@ -1960,26 +2131,21 @@ function renderView2(wk) {
     districtToUnits[c.district][c.unit].mini += c.mini;
     districtToUnits[c.district][c.unit].members += c.members;
   });
-  // เพิ่ม offering จาก byUnitCares
   Object.entries(DEMO.byUnitCares).forEach(([unitName, u]) => {
     Object.entries(u.cares).forEach(([careName, c]) => {
       const careObj = (churchCares||[]).find(cc => cc.name === careName);
       const district = careObj ? careObj.district : '';
-      if(district && districtToUnits[district] && districtToUnits[district][unitName]) {
+      if(district && !isAllDist(district) && districtToUnits[district] && districtToUnits[district][unitName]) {
         districtToUnits[district][unitName].offering = (districtToUnits[district][unitName].offering || 0) + (c.offering||0);
       }
     });
   });
 
-  Object.entries(DEMO.byDistrict).forEach(([name, d]) => {
-    const unitsInDist = districtToUnits[name] || {};
-    let unitRows = '';
+  const renderUnitRows = (unitsInDist) => {
+    let s = '';
     Object.entries(unitsInDist).forEach(([uname, ud]) => {
-      const color = {
-        'หน่วย Pro':'#1565C0','หน่วยภูมิศาสตร์':'#2E7D32',
-        'หน่วยซีเนียร์':'#6A1B9A','หน่วยสถาบัน':'#BF360C'
-      }[uname] || '#666';
-      unitRows += `<div style="border-top:1px solid #EEE;padding:8px 0;">
+      const color = UNIT_COLOR[uname] || '#666';
+      s += `<div style="border-top:1px solid #EEE;padding:8px 0;">
         <div style="font-size:11px;font-weight:700;color:${color};margin-bottom:4px">${uname} (${ud.members} คน)</div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px;">
           <div><span style="color:#999">โบสถ์</span> <b style="color:#2E7D32">${ud.church}</b></div>
@@ -1988,17 +2154,53 @@ function renderView2(wk) {
         </div>
       </div>`;
     });
+    return s;
+  };
+
+  // [v19] ยอดรวมทุกอำเภอ (sum ข้ามอำเภอจริง — ไม่รวม placeholder)
+  const grand = {members:0, church:0, care:0, mini:0, announce:0, offering:0};
+  const grandUnits = {};
+  let grandKids = {church:0, care:0};
+
+  Object.entries(DEMO.byDistrict).forEach(([name, d]) => {
+    if(isAllDist(name)) return;
+    const unitsInDist = districtToUnits[name] || {};
+    const kd = kidsAttByDist[name] || {church:0, care:0};
+    grand.members += (d.members||0); grand.church += (d.church||0); grand.care += (d.care||0);
+    grand.mini += (d.mini||0); grand.announce += (d.announce||0); grand.offering += (d.offering||0);
+    grandKids.church += kd.church; grandKids.care += kd.care;
+    Object.entries(unitsInDist).forEach(([uname, ud]) => {
+      if(!grandUnits[uname]) grandUnits[uname] = {church:0, care:0, mini:0, offering:0, members:0};
+      grandUnits[uname].church += ud.church; grandUnits[uname].care += ud.care;
+      grandUnits[uname].mini += ud.mini; grandUnits[uname].offering += (ud.offering||0); grandUnits[uname].members += ud.members;
+    });
     html += `<div class="district-card">
       <div class="district-header" style="background:#1565C0">${name} (${d.members} คน)</div>
       <div class="district-body">
         <div class="district-row"><span class="dr-label">มาโบสถ์รวม</span><span class="dr-val">${d.church}</span></div>
         <div class="district-row"><span class="dr-label">มาแคร์รวม</span><span class="dr-val">${d.care}</span></div>
         <div class="district-row"><span class="dr-label">มินิเซิ้ตรวม</span><span class="dr-val">${d.mini}</span></div>
-        <div class="district-row"><span class="dr-label">ถวายรวม</span><span class="dr-val">฿${d.offering.toLocaleString()}</span></div>
-        ${unitRows}
+        <div class="district-row"><span class="dr-label">ประกาศรวม</span><span class="dr-val">${d.announce||0}</span></div>
+        <div class="district-row" style="background:#F1F8E9;margin:2px -14px;padding-left:14px;padding-right:14px"><span class="dr-label">👧 คจ.เด็ก (โบสถ์/แคร์)</span><span class="dr-val" style="color:#00695C">${kd.church} / ${kd.care}</span></div>
+        <div class="district-row"><span class="dr-label">ถวายรวม</span><span class="dr-val">฿${(d.offering||0).toLocaleString()}</span></div>
+        ${renderUnitRows(unitsInDist)}
       </div>
     </div>`;
   });
+
+  html += `<div class="district-card" style="border:2px solid #B8862E;box-shadow:0 4px 14px rgba(184,134,46,.25)">
+    <div class="district-header" style="background:linear-gradient(135deg,#8a6d1f,#B8862E)">รวมทุกอำเภอ (${grand.members} คน)</div>
+    <div class="district-body">
+      <div class="district-row"><span class="dr-label">มาโบสถ์รวม</span><span class="dr-val">${grand.church}</span></div>
+      <div class="district-row"><span class="dr-label">มาแคร์รวม</span><span class="dr-val">${grand.care}</span></div>
+      <div class="district-row"><span class="dr-label">มินิเซิ้ตรวม</span><span class="dr-val">${grand.mini}</span></div>
+      <div class="district-row"><span class="dr-label">ประกาศรวม</span><span class="dr-val">${grand.announce}</span></div>
+      <div class="district-row" style="background:#F1F8E9;margin:2px -14px;padding-left:14px;padding-right:14px"><span class="dr-label">👧 คจ.เด็ก (โบสถ์/แคร์)</span><span class="dr-val" style="color:#00695C">${grandKids.church} / ${grandKids.care}</span></div>
+      <div class="district-row"><span class="dr-label">ถวายรวม</span><span class="dr-val">฿${grand.offering.toLocaleString()}</span></div>
+      ${renderUnitRows(grandUnits)}
+    </div>
+  </div>`;
+
   html += `</div></div>`;
   return html;
 }
