@@ -554,6 +554,7 @@ tbody td.L{text-align:center;padding-left:4px;}
       <select class="db-sel" id="db-view" onchange="renderDash()">
         <option value="1">🌐 ภาพรวมจังหวัด (รวมทุกอำเภอ)</option>
         <option value="2">🌏 แยกอำเภอ</option>
+        <option value="4">📤 ส่งภาค</option>
       </select></div>
     <div class="cg"><label>📅 ช่วงเวลา</label>
       <select class="db-sel-sm" id="db-period" onchange="renderDash()">
@@ -576,6 +577,7 @@ let churchKids = [];
 let churchCares = [];
 let churchWeeklyRows = [];
 let churchNewPeople = [];
+let churchInactive = [];
 let churchSession = null;
 
 // ==================== UI HELPERS ====================
@@ -1218,7 +1220,7 @@ function buildDemoFromMembers() {
   });
   (churchMembers||[]).forEach(m => {
     const ns = normalizeStatus(m.status);
-    if(['สถ.','ผถ.','ผส.'].includes(ns)) return;
+    if(['สถ.','ผถ.','ผส.','คจ.เด็ก'].includes(ns)) return;   // [v20] กันนับเด็กซ้ำ (เด็กนับจาก KIDS_LOG ที่เดียว)
     if(DEMO.byUnit[m.unit]) {
       DEMO.byUnit[m.unit].members++;
       if(['หนน.','หนค.','พล.'].includes(ns)) DEMO.byUnit[m.unit].leaders++;
@@ -1245,6 +1247,8 @@ function buildDemoFromMembers() {
     if(DEMO.byUnitCares[careObj.unit] && DEMO.byUnitCares[careObj.unit].cares[k.care]) {
       DEMO.byUnitCares[careObj.unit].cares[k.care].members++;
     }
+    const _kd = (careObj.district||k.district||'').trim();   // [v20] นับเด็กเข้ายอดอำเภอ (ครั้งเดียว)
+    if(_kd && DEMO.byDistrict[_kd]) DEMO.byDistrict[_kd].members++;
   });
 }
 
@@ -1375,8 +1379,9 @@ function renderDash() {
   const cont = document.getElementById('dash-content');
   if(!cont) return;
   if(!churchDataReady){ cont.innerHTML = '<div style="padding:48px;text-align:center;color:#8B7355;font-size:15px">⏳ กำลังโหลดข้อมูล… ระบบจะแสดงผลให้อัตโนมัติเมื่อโหลดเสร็จ</div>'; return; }
-  if(view === '2') cont.innerHTML = renderView2(wk);
-  else cont.innerHTML = renderView1(wk);   // [v19] เอา view 3 (แยกแต่ละหน่วย) ออก — รวมอยู่ในภาพรวมจังหวัดแล้ว
+  if(view === '4') cont.innerHTML = renderView4(wk);   // [v21] ส่งภาค
+  else if(view === '2') cont.innerHTML = renderView2(wk);
+  else cont.innerHTML = renderView1(wk);   // [v19] เอา view 3 (แยกแต่ละหน่วย) ออก
 
   setTimeout(()=>{
     redrawMomentum();
@@ -2004,7 +2009,7 @@ function computeMemberCounts() {
   (churchMembers||[]).forEach(m => {
     const ns = normalizeStatus(m.status);
     if(['หนน.','หนค.','พล.'].includes(ns)) leaders++;
-    else if(['สช.','ผช.','คจ.เด็ก'].includes(ns)) members++;
+    else if(['สช.','ผช.'].includes(ns)) members++;   // [v20] เด็กนับจาก KIDS_LOG แยก (กันซ้ำ)
     else if(['สถ.','ผถ.'].includes(ns)) inactive++;
   });
   members += (churchKids||[]).length;
@@ -2083,6 +2088,238 @@ function renderNewPeopleTable() {
   </div>`;
 }
 
+// ==================== [v21] VIEW 4: ส่งภาค (รายงานสำหรับกรอกชีตภาค) ====================
+const REGION_DISTRICTS = [
+  {key:'อ.เมือง',label:'เมืองราชบุรี',row:71},
+  {key:'อ.บ้านโป่ง',label:'บ้านโป่ง',row:72},
+  {key:'อ.บ้านคา',label:'บ้านคา',row:73},
+  {key:'อ.สวนผึ้ง',label:'สวนผึ้ง',row:74},
+  {key:'อ.ปากท่อ',label:'ปากท่อ',row:75},
+  {key:'อ.ดำเนินสะดวก',label:'ดำเนินสะดวก',row:76},
+  {key:'อ.โพธาราม',label:'โพธาราม',row:77},
+  {key:'อ.จอมบึง',label:'จอมบึง',row:78},
+  {key:'อ.วัดเพลง',label:'วัดเพลง',row:79},
+  {key:'อ.บางแพ',label:'บางแพ',row:80}
+];
+const REG_MEMBER_SET = ['หนน.','หนค.','พล.','สช.','ผช.'];
+
+function regCareDistrict(careName){
+  const c = (churchCares||[]).find(x => (x.name||'').trim() === (careName||'').trim());
+  return c ? (c.district||'').trim() : '';
+}
+function regManualKey(wk,dist,f){ return 'reg_'+wk+'_'+dist+'_'+f; }
+function regGetManual(wk,dist,f){ try { return localStorage.getItem(regManualKey(wk,dist,f)) || ''; } catch(e){ return ''; } }
+function regSaveManual(el){
+  const wkSel = document.getElementById('db-range');
+  const wk = wkSel ? wkSel.value : '';
+  try { localStorage.setItem(regManualKey(wk, el.dataset.dist, el.dataset.f), el.value); } catch(e){}
+  apiToast('💾 บันทึกค่ากรอกมือแล้ว','ok');
+}
+
+function computeRegional(wk){
+  const wkN = normalizeDateStr(wk);
+  const tick = v => v === '✓' || v === '✔' || v === true || v === 1 ||
+                    String(v).toLowerCase() === 'true' || String(v).toLowerCase() === 'yes';
+  const R = {};
+  REGION_DISTRICTS.forEach(d => R[d.key] = {
+    m_sch:0,m_pch:0,m_pj:0,m_pk:0,m_py:0,m_khy:0,m_dek:0,m_sata:0,m_phata:0,
+    c_sch:0,c_pch:0,c_pj:0,c_pk:0,c_py:0,c_khy:0,c_dek:0,
+    one1:0,ay_sch:0,az_pch:0,ba:0,bb:0,bc:0,bd:0,be:0,bf:0,bi:0
+  });
+  const stById = {};
+  (churchMembers||[]).forEach(m => { stById[m.id] = normalizeStatus(m.status); });
+
+  // --- WEEKLY_LOG (สมาชิก + เด็ก) ---
+  (churchWeeklyRows||[]).forEach(r => {
+    if(isMetaOfferingRow(r)) return;
+    if(normalizeDateStr(r.date) !== wkN) return;
+    const isKid = String(r.id||'').startsWith('K') || (r.care||'').trim() === 'คจ.เด็ก';
+    let dist;
+    if(isKid){ dist = regCareDistrict((r.unit||'').trim()) || (r.district||'').trim(); }
+    else { dist = (r.district||'').trim() || regCareDistrict((r.care||'').trim()); }
+    const D = R[dist];
+    if(!D) return;
+    const off = (+r.offering||0);
+    if(isKid){
+      if(tick(r.church)) D.m_dek++;
+      if(tick(r.careAtt)) D.c_dek++;
+      D.bi += off;
+      return;
+    }
+    const isMember = REG_MEMBER_SET.indexOf(stById[r.id]) >= 0;
+    if(tick(r.church) && isMember) D.m_sch++;
+    if(tick(r.careAtt) && isMember) D.c_sch++;
+    if(tick(r.ppch) && isMember) D.ay_sch++;
+    D.one1 += (+r.one1||0);
+    if(tick(r.dawn)) D.ba++;
+    if(tick(r.lunch)) D.bb++;
+    if(tick(r.david)) D.bc++;
+    D.bd += (+r.prok||0);
+    D.bi += off;
+  });
+
+  // --- NEW_PEOPLE: สัปดาห์สะสมต่อคน ---
+  const datesByPerson = {};
+  (churchNewPeople||[]).forEach(p => {
+    const key = (String(p.name||'').trim()+'|'+String(p.nick||'').trim()).toLowerCase();
+    if(!datesByPerson[key]) datesByPerson[key] = new Set();
+    datesByPerson[key].add(normalizeDateStr(p.date));
+  });
+  const weeksUpTo = (key, wkRef) => {
+    const ref = parseBuddhistDate(wkRef); if(!ref) return 0;
+    let n = 0; (datesByPerson[key]||new Set()).forEach(ds => { const dd = parseBuddhistDate(ds); if(dd && dd <= ref) n++; });
+    return n;
+  };
+
+  (churchNewPeople||[]).forEach(p => {
+    if(normalizeDateStr(p.date) !== wkN) return;
+    const a = parseNewPersonActivity(p);
+    const type = (p.type||'').trim();
+    const isBeliever = type === 'รับเชื่อ';
+    const isInterested = type === 'ผู้สนใจ / เยี่ยมเยียน' || type === 'ผู้สนใจ';
+    const isSpecial = type === 'เยี่ยมเยียนพิเศษ' || type === 'เยี่ยมพิเศษ';
+    const key = (String(p.name||'').trim()+'|'+String(p.nick||'').trim()).toLowerCase();
+    const wksTotal = (datesByPerson[key]||new Set()).size;
+
+    if(isSpecial){
+      const T = R['อ.เมือง'];   // ภาคมีเฉพาะแถวเมืองสำหรับ พย./คย.
+      const src = (p.care||'')+' '+(p.unit||'');
+      const other = src.indexOf('คริสตจักรอื่น') >= 0 || src.indexOf('คจ.อื่น') >= 0;
+      if(other){ if(a.church) T.m_khy++; if(a.careAtt) T.c_khy++; }
+      else { if(a.church) T.m_py++; if(a.careAtt) T.c_py++; }
+      T.ba += a.dawn; T.bb += a.lunch; T.bi += a.offering;
+      return;
+    }
+    const dist = regCareDistrict((p.care||'').trim());
+    const D = R[dist];
+    if(!D) return;
+    if(isBeliever){
+      if(a.church && wksTotal < 8) D.m_pch++;
+      if(a.careAtt && wksTotal < 8) D.c_pch++;
+      if(a.ppch && wksTotal < 8) D.az_pch++;
+    }
+    if(isInterested){
+      if(a.church) D.m_pj++;
+      if(a.careAtt) D.c_pj++;
+      const cum = weeksUpTo(key, wk);
+      if(cum === 2){ if(a.church) D.m_pk++; if(a.careAtt) D.c_pk++; }
+    }
+    D.ba += a.dawn; D.bb += a.lunch; D.bi += a.offering;
+  });
+
+  // --- INACTIVE (สถ./ผถ.) แยกอำเภอ ---
+  (churchInactive||[]).forEach(p => {
+    const dist = (p.district||'').trim() || regCareDistrict((p.care||'').trim());
+    const D = R[dist]; if(!D) return;
+    const st = normalizeStatus(p.status);
+    if(st.indexOf('สถ') === 0) D.m_sata++;
+    else if(st.indexOf('ผถ') === 0) D.m_phata++;
+  });
+
+  // --- กลุ่ม (CARES) ---
+  (churchCares||[]).forEach(c => {
+    const D = R[(c.district||'').trim()]; if(!D) return;
+    if((c.unit||'').trim() === 'หน่วย Pro') D.be++;
+    if((c.unit||'').trim() === 'หน่วยสถาบัน') D.bf++;
+  });
+
+  return R;
+}
+
+function renderView4(wk){
+  const R = computeRegional(wk);
+  // โครง: code, ป้าย, field, manual?, kind(num/baht)
+  const COLS = [
+    {g:'คจ (รอบนมัสการวันอาทิตย์)',c:'M',l:'สช.',f:'m_sch'},
+    {g:'',c:'N',l:'ผช.',f:'m_pch'},
+    {g:'',c:'O',l:'ผจ.',f:'m_pj'},
+    {g:'',c:'P',l:'ผส.',f:'m_ps',manual:1},
+    {g:'',c:'Q',l:'ผก.',f:'m_pk'},
+    {g:'',c:'R',l:'สถ.',f:'m_sata'},
+    {g:'',c:'S',l:'ผถ.',f:'m_phata'},
+    {g:'',c:'T',l:'พย.',f:'m_py'},
+    {g:'',c:'U',l:'คย.',f:'m_khy'},
+    {g:'',c:'V',l:'เด็ก',f:'m_dek'},
+    {g:'แคร์ระหว่างสัปดาห์',c:'AJ',l:'สช.',f:'c_sch'},
+    {g:'',c:'AK',l:'ผช.',f:'c_pch'},
+    {g:'',c:'AL',l:'ผจ.',f:'c_pj'},
+    {g:'',c:'AM',l:'ผส.',f:'c_ps',manual:1},
+    {g:'',c:'AN',l:'ผก.',f:'c_pk'},
+    {g:'',c:'AO',l:'สถ.',f:'m_sata'},
+    {g:'',c:'AP',l:'ผถ.',f:'m_phata'},
+    {g:'',c:'AQ',l:'พย.',f:'c_py'},
+    {g:'',c:'AR',l:'คย.',f:'c_khy'},
+    {g:'',c:'AS',l:'เด็ก',f:'c_dek'},
+    {g:'1:1',c:'AU',l:'1:1',f:'one1'},
+    {g:'การติดตาม',c:'AV',l:'สช.',f:'av',manual:1},
+    {g:'',c:'AW',l:'ผก.',f:'aw',manual:1},
+    {g:'',c:'AX',l:'สถ.',f:'ax',manual:1},
+    {g:'พพช.',c:'AY',l:'สช.',f:'ay_sch'},
+    {g:'',c:'AZ',l:'ผช.',f:'az_pch'},
+    {g:'กิจกรรม',c:'BA',l:'รุ่งอรุณ',f:'ba'},
+    {g:'',c:'BB',l:'อาหารเที่ยง',f:'bb'},
+    {g:'',c:'BC',l:'ดาวิด',f:'bc'},
+    {g:'',c:'BD',l:'ประกาศ',f:'bd'},
+    {g:'กลุ่มคนคล้าย',c:'BE',l:'ก.โปร',f:'be'},
+    {g:'',c:'BF',l:'ก.สถาบัน',f:'bf'},
+    {g:'ถวาย',c:'BI',l:'฿',f:'bi',baht:1}
+  ];
+  const GROUP_COLOR = {
+    'คจ (รอบนมัสการวันอาทิตย์)':'#1565C0','แคร์ระหว่างสัปดาห์':'#2E7D32','1:1':'#6A1B9A',
+    'การติดตาม':'#00838F','พพช.':'#827717','กิจกรรม':'#E65100','กลุ่มคนคล้าย':'#5D4037','ถวาย':'#880E4F'
+  };
+  // group header spans
+  let groups = []; COLS.forEach(c => { if(c.g){ groups.push({name:c.g,span:1}); } else { groups[groups.length-1].span++; } });
+
+  const th1 = '<th rowspan="2" style="position:sticky;left:0;background:#241F17;z-index:3;min-width:120px;text-align:left;padding:6px 8px">อำเภอ</th>' +
+    groups.map(g => `<th colspan="${g.span}" style="background:${GROUP_COLOR[g.name]||'#333'};color:#fff;padding:5px 6px;font-size:11px;border-left:2px solid #241F17">${g.name}</th>`).join('');
+  const th2 = COLS.map(c => `<th style="background:#3A2F22;color:#FFE6B8;padding:4px 5px;font-size:10px;font-weight:700;min-width:42px;white-space:nowrap">${c.l}<div style="font-size:8px;color:#A89478">${c.c}</div></th>`).join('');
+
+  const rowsHtml = REGION_DISTRICTS.map(dmeta => {
+    const D = R[dmeta.key];
+    const cells = COLS.map(c => {
+      if(c.manual){
+        const v = regGetManual(wk, dmeta.key, c.f);
+        return `<td style="padding:2px;text-align:center;background:#FFF8E1"><input type="number" min="0" value="${v}" data-dist="${dmeta.key}" data-f="${c.f}" onchange="regSaveManual(this)" placeholder="—" style="width:44px;padding:3px;border:1.5px solid #E0C46A;border-radius:4px;font-size:11px;text-align:center;background:#fffef7"></td>`;
+      }
+      let val = D[c.f] || 0;
+      const txt = c.baht ? ('฿'+val.toLocaleString()) : val;
+      const dim = val ? '' : 'color:#C9BCA6;';
+      return `<td style="padding:4px 5px;text-align:center;font-size:12px;font-weight:${val?'700':'400'};${dim}">${txt}</td>`;
+    }).join('');
+    return `<tr style="border-bottom:1px solid #EFE7D8"><td style="position:sticky;left:0;background:#FBF7EF;z-index:2;padding:6px 8px;font-weight:700;color:#3A2F22;font-size:12px;border-right:2px solid #E0D4BE">${dmeta.label}<div style="font-size:9px;color:#A89478">แถว ${dmeta.row}</div></td>${cells}</tr>`;
+  }).join('');
+
+  let totalBi = 0; REGION_DISTRICTS.forEach(d => totalBi += (R[d.key].bi||0));
+  const oe = getOfferingExtra(wk);
+  const offSun = (oe.sunday===''||oe.sunday==null) ? '' : oe.sunday;
+  const offMem = (oe.memorial===''||oe.memorial==null) ? '' : oe.memorial;
+  const NA = '<span style="color:#C9BCA6;font-size:14px">— ยังไม่กรอก</span>';
+  const offBlock = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">
+    <div style="background:#fff;border-radius:12px;border-left:5px solid #880E4F;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,.05)"><div style="font-size:12px;color:#8B7355;font-weight:700">💰 รวมถวาย (เช็คลิสต์ทุกอำเภอ)</div><div style="font-size:24px;font-weight:800;color:#880E4F">฿${totalBi.toLocaleString()}</div></div>
+    <div style="background:#fff;border-radius:12px;border-left:5px solid #F2A93B;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,.05)"><div style="font-size:12px;color:#8B7355;font-weight:700">🧺 ถวายสิบลด (วันอาทิตย์)</div><div style="font-size:22px;font-weight:800;color:#B8862E">${offSun===''?NA:'฿'+Number(offSun).toLocaleString()}</div></div>
+    <div style="background:#fff;border-radius:12px;border-left:5px solid #1565C0;padding:12px 16px;box-shadow:0 2px 8px rgba(0,0,0,.05)"><div style="font-size:12px;color:#8B7355;font-weight:700">🙏 อนุสรณ์พระพร</div><div style="font-size:22px;font-weight:800;color:#1565C0">${offMem===''?NA:'฿'+Number(offMem).toLocaleString()}</div></div>
+  </div>`;
+  return `<div class="dv2">
+    <div class="dv2-hero">
+      <div class="dv2-hero-label">อาทิตย์ที่ ${wk}</div>
+      <div class="dv2-hero-date">📤 ส่งภาค (กรอกชีตภาคกลาง)</div>
+      <div class="dv2-hero-sub">ดึงจาก WEEKLY_LOG + NEW_PEOPLE + INACTIVE อัตโนมัติ · ช่องสีเหลือง = กรอกมือ (ผส./การติดตาม) · เลขใต้หัวคอลัมน์ = ช่องในชีตภาค</div>
+    </div>
+    ${offBlock}
+    <div style="background:#fff;border-radius:12px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow-x:auto">
+      <table style="border-collapse:collapse;width:100%;font-family:inherit">
+        <thead><tr>${th1}</tr><tr>${th2}</tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:#8B7355;line-height:1.7">
+      💡 <b>สช.</b> = สมาชิก (หนน./หนค./พล./สช./ผช.) ที่มาในสัปดาห์นั้น · <b>ผช.</b> = ผู้รับเชื่อที่ยังมาไม่ครบ 8 สัปดาห์ · <b>ผจ.</b> = ผู้สนใจที่ยังไม่รับเชื่อ · <b>ผก.</b> = ผู้สนใจที่กลับมาครั้งที่ 2 · <b>สถ./ผถ.</b> = ดึงจากชีต INACTIVE · <b>พย./คย.</b> = ผู้มาเยี่ยมพิเศษ (ลงแถวเมือง) · <b>กลุ่ม</b> = จำนวนแคร์ในอำเภอ<br>
+      ⚠️ ช่องสีเหลือง (ผส., การติดตาม สช./ผก./สถ.) ระบบให้กรอกมือ เพราะข้อมูลไม่แน่นอน — ค่าที่กรอกถูกบันทึกไว้ในเครื่องตามรายสัปดาห์
+    </div>
+  </div>`;
+}
+
 function renderView2(wk) {
   // [v5/v19] แยกอำเภอ — แตกหน่วยย่อย + ประกาศ + คจ.เด็ก + การ์ดรวมทุกอำเภอ
   const UNIT_COLOR = {
@@ -2118,6 +2355,31 @@ function renderView2(wk) {
     if(tick(r.careAtt)) kidsAttByDist[dist].care++;
   });
 
+  // [v20] รวม "คนใหม่" (NEW_PEOPLE) เข้ายอดอำเภอ/หน่วย — มาโบสถ์/แคร์
+  const newByDist = {};       // {district:{church,care,mini}}
+  const newByDistUnit = {};   // {district:{unit:{church,care,mini}}}
+  (churchNewPeople||[]).forEach(p => {
+    if(normalizeDateStr(p.date) !== normalizeDateStr(wk)) return;
+    const careObj = (churchCares||[]).find(c => (c.name||'').trim() === (p.care||'').trim());
+    const dist = (careObj ? careObj.district : '') || '';
+    if(!dist || isAllDist(dist)) return;
+    const a = parseNewPersonActivity(p);
+    const isCh = a.church===1, isCa = a.careAtt===1;
+    if(!isCh && !isCa) return;
+    const unit = (p.unit||'').trim();
+    if(!newByDist[dist]) newByDist[dist] = {church:0,care:0,mini:0};
+    if(isCh) newByDist[dist].church++;
+    if(isCa) newByDist[dist].care++;
+    newByDist[dist].mini++;
+    if(unit){
+      if(!newByDistUnit[dist]) newByDistUnit[dist] = {};
+      if(!newByDistUnit[dist][unit]) newByDistUnit[dist][unit] = {church:0,care:0,mini:0};
+      if(isCh) newByDistUnit[dist][unit].church++;
+      if(isCa) newByDistUnit[dist][unit].care++;
+      newByDistUnit[dist][unit].mini++;
+    }
+  });
+
   // หาหน่วยที่อยู่ในแต่ละอำเภอ (byCare รวมเด็กแล้ว) — ข้าม placeholder "ทุกอำเภอ"
   const districtToUnits = {};
   Object.entries(DEMO.byCare).forEach(([careName, c]) => {
@@ -2138,6 +2400,17 @@ function renderView2(wk) {
       if(district && !isAllDist(district) && districtToUnits[district] && districtToUnits[district][unitName]) {
         districtToUnits[district][unitName].offering = (districtToUnits[district][unitName].offering || 0) + (c.offering||0);
       }
+    });
+  });
+
+  // [v20] เติมคนใหม่เข้า per-unit (โบสถ์/แคร์/มินิ)
+  Object.entries(newByDistUnit).forEach(([dist, units]) => {
+    Object.entries(units).forEach(([unit, v]) => {
+      if(!districtToUnits[dist]) districtToUnits[dist] = {};
+      if(!districtToUnits[dist][unit]) districtToUnits[dist][unit] = {church:0,care:0,mini:0,offering:0,members:0};
+      districtToUnits[dist][unit].church += v.church;
+      districtToUnits[dist][unit].care += v.care;
+      districtToUnits[dist][unit].mini += v.mini;
     });
   });
 
@@ -2166,8 +2439,10 @@ function renderView2(wk) {
     if(isAllDist(name)) return;
     const unitsInDist = districtToUnits[name] || {};
     const kd = kidsAttByDist[name] || {church:0, care:0};
-    grand.members += (d.members||0); grand.church += (d.church||0); grand.care += (d.care||0);
-    grand.mini += (d.mini||0); grand.announce += (d.announce||0); grand.offering += (d.offering||0);
+    const nd = newByDist[name] || {church:0, care:0, mini:0};   // [v20] คนใหม่รายอำเภอ
+    const dChurch = (d.church||0) + nd.church, dCare = (d.care||0) + nd.care, dMini = (d.mini||0) + nd.mini;
+    grand.members += (d.members||0); grand.church += dChurch; grand.care += dCare;
+    grand.mini += dMini; grand.announce += (d.announce||0); grand.offering += (d.offering||0);
     grandKids.church += kd.church; grandKids.care += kd.care;
     Object.entries(unitsInDist).forEach(([uname, ud]) => {
       if(!grandUnits[uname]) grandUnits[uname] = {church:0, care:0, mini:0, offering:0, members:0};
@@ -2177,9 +2452,9 @@ function renderView2(wk) {
     html += `<div class="district-card">
       <div class="district-header" style="background:#1565C0">${name} (${d.members} คน)</div>
       <div class="district-body">
-        <div class="district-row"><span class="dr-label">มาโบสถ์รวม</span><span class="dr-val">${d.church}</span></div>
-        <div class="district-row"><span class="dr-label">มาแคร์รวม</span><span class="dr-val">${d.care}</span></div>
-        <div class="district-row"><span class="dr-label">มินิเซิ้ตรวม</span><span class="dr-val">${d.mini}</span></div>
+        <div class="district-row"><span class="dr-label">มาโบสถ์รวม</span><span class="dr-val">${dChurch}</span></div>
+        <div class="district-row"><span class="dr-label">มาแคร์รวม</span><span class="dr-val">${dCare}</span></div>
+        <div class="district-row"><span class="dr-label">มินิเซิ้ตรวม</span><span class="dr-val">${dMini}</span></div>
         <div class="district-row"><span class="dr-label">ประกาศรวม</span><span class="dr-val">${d.announce||0}</span></div>
         <div class="district-row" style="background:#F1F8E9;margin:2px -14px;padding-left:14px;padding-right:14px"><span class="dr-label">👧 คจ.เด็ก (โบสถ์/แคร์)</span><span class="dr-val" style="color:#00695C">${kd.church} / ${kd.care}</span></div>
         <div class="district-row"><span class="dr-label">ถวายรวม</span><span class="dr-val">฿${(d.offering||0).toLocaleString()}</span></div>
@@ -2590,7 +2865,8 @@ async function churchLoadAll() {
       churchLoadMembers(),
       churchLoadKids(),
       churchLoadNewPeople(),
-      churchLoadWeekly()
+      churchLoadWeekly(),
+      churchLoadInactive()
     ]);
   } catch(e) {
     console.error('churchLoadAll error:', e);
@@ -2805,6 +3081,38 @@ async function churchLoadWeekly() {
   } catch(e) {
     console.warn('loadWeekly err:', e);
   }
+}
+
+async function churchLoadInactive() {
+  try {
+    const url = CHURCH_API + '?action=inactive&token=' + encodeURIComponent(churchSession.token);
+    const r = await fetch(url);
+    const d = await r.json();
+    if(d.ok) churchInactive = d.data || [];
+    console.log('[load] inactive:', (churchInactive||[]).length);
+  } catch(e) { console.warn('loadInactive err:', e); }
+}
+
+// [v21] ปุ่ม "ดึงข้อมูลล่าสุดจาก Sheet" — โหลดใหม่ทั้งหมดแล้ว render
+async function churchRefreshDashboard() {
+  showLoading(true);
+  apiToast('🔄 กำลังดึงข้อมูลล่าสุด...', '');
+  try { await churchLoadAll(); } catch(e){}
+  showLoading(false);
+  if(typeof renderDash === 'function') renderDash();
+  apiToast('✅ อัปเดตข้อมูลแล้ว', 'ok');
+}
+
+// [v21] ปุ่มทดสอบ API
+async function churchTestAPI() {
+  showLoading(true);
+  try {
+    const url = CHURCH_API + '?action=weekly&token=' + encodeURIComponent((churchSession&&churchSession.token)||'');
+    const r = await fetch(url);
+    const d = await r.json();
+    apiToast(d.ok ? ('✅ API OK · weekly '+((d.data||[]).length)+' แถว') : ('❌ API: '+(d.error||'?')), d.ok?'ok':'err');
+  } catch(e) { apiToast('❌ เชื่อมต่อ API ไม่ได้: '+e.message, 'err'); }
+  showLoading(false);
 }
 
 // ==================== CHURCH ON CARE CHANGE (v4) ====================
