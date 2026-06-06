@@ -1385,6 +1385,7 @@ function renderDash() {
 
   setTimeout(()=>{
     redrawMomentum();
+    if(view === '4') churchRefreshRegionFromSheet(wk);
   }, 50);
 }
 
@@ -2227,7 +2228,9 @@ function computeRegional(wk){
 }
 
 function renderView4(wk){
-  const R = computeRegional(wk);
+  const wkN = normalizeDateStr(wk);
+  const fromSheet = !!(window.__regionSheet && window.__regionSheet[wkN]);
+  const R = fromSheet ? window.__regionSheet[wkN] : computeRegional(wk);
   // โครง: code, ป้าย, field, manual?, kind(num/baht)
   const COLS = [
     {g:'คจ (รอบนมัสการวันอาทิตย์)',c:'M',l:'สช.',f:'m_sch'},
@@ -2276,10 +2279,10 @@ function renderView4(wk){
   const th2 = COLS.map(c => `<th style="background:#3A2F22;color:#FFE6B8;padding:4px 5px;font-size:10px;font-weight:700;min-width:42px;white-space:nowrap">${c.l}<div style="font-size:8px;color:#A89478">${c.c}</div></th>`).join('');
 
   const rowsHtml = REGION_DISTRICTS.map(dmeta => {
-    const D = R[dmeta.key];
+    const D = R[dmeta.key] || {};
     const cells = COLS.map(c => {
       if(c.manual){
-        const v = regGetManual(wk, dmeta.key, c.f);
+        const v = (D[c.f]!=null && D[c.f]!=='') ? D[c.f] : regGetManual(wk, dmeta.key, c.f);
         return `<td style="padding:2px;text-align:center;background:#FFF8E1"><input type="number" min="0" value="${v}" data-dist="${dmeta.key}" data-f="${c.f}" onchange="regSaveManual(this)" placeholder="—" style="width:44px;padding:3px;border:1.5px solid #E0C46A;border-radius:4px;font-size:11px;text-align:center;background:#fffef7"></td>`;
       }
       let val = D[c.f] || 0;
@@ -2290,7 +2293,7 @@ function renderView4(wk){
     return `<tr style="border-bottom:1px solid #EFE7D8"><td style="position:sticky;left:0;background:#FBF7EF;z-index:2;padding:6px 8px;font-weight:700;color:#3A2F22;font-size:12px;border-right:2px solid #E0D4BE">${dmeta.label}<div style="font-size:9px;color:#A89478">แถว ${dmeta.row}</div></td>${cells}</tr>`;
   }).join('');
 
-  let totalBi = 0; REGION_DISTRICTS.forEach(d => totalBi += (R[d.key].bi||0));
+  let totalBi = 0; REGION_DISTRICTS.forEach(d => totalBi += ((R[d.key]||{}).bi||0));
   const oe = getOfferingExtra(wk);
   const offSun = (oe.sunday===''||oe.sunday==null) ? '' : oe.sunday;
   const offMem = (oe.memorial===''||oe.memorial==null) ? '' : oe.memorial;
@@ -2304,10 +2307,13 @@ function renderView4(wk){
     <div class="dv2-hero">
       <div class="dv2-hero-label">อาทิตย์ที่ ${wk}</div>
       <div class="dv2-hero-date">📤 ส่งภาค (กรอกชีตภาคกลาง)</div>
-      <div class="dv2-hero-sub">ดึงจาก WEEKLY_LOG + NEW_PEOPLE + INACTIVE อัตโนมัติ · ช่องสีเหลือง = กรอกมือ (ผส./การติดตาม) · เลขใต้หัวคอลัมน์ = ช่องในชีตภาค</div>
+      <div class="dv2-hero-sub">ดึงจาก WEEKLY_LOG + NEW_PEOPLE + INACTIVE อัตโนมัติ · ช่องสีเหลือง = กรอกมือ (ผส./การติดตาม) · เลขใต้หัวคอลัมน์ = ช่องในชีตภาค${fromSheet?' · ✅ ค่าจากชีต':' · (คำนวณในเครื่อง)'}</div>
     </div>
     ${offBlock}
-    <div style="background:#fff;border-radius:12px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow-x:auto">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+      <button onclick="churchSaveRegional()" style="background:#00695C;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-weight:700;font-size:14px;cursor:pointer">✅ ยืนยัน & บันทึกขึ้นชีต SUMMARY ส่งภาค</button>
+    </div>
+    <div id="region-tbl" style="background:#fff;border-radius:12px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow-x:auto">
       <table style="border-collapse:collapse;width:100%;font-family:inherit">
         <thead><tr>${th1}</tr><tr>${th2}</tr></thead>
         <tbody>${rowsHtml}</tbody>
@@ -3113,6 +3119,59 @@ async function churchTestAPI() {
     apiToast(d.ok ? ('✅ API OK · weekly '+((d.data||[]).length)+' แถว') : ('❌ API: '+(d.error||'?')), d.ok?'ok':'err');
   } catch(e) { apiToast('❌ เชื่อมต่อ API ไม่ได้: '+e.message, 'err'); }
   showLoading(false);
+}
+
+// [v23] ดึงค่าส่งภาคจากชีต (auto + กรอกมือ) มาแสดงบนเว็บ
+async function churchRefreshRegionFromSheet(wk){
+  if(!wk) return;
+  const wkN = normalizeDateStr(wk);
+  window.__regionSheet = window.__regionSheet || {};
+  if(window.__regionSheet[wkN]) return;          // มีแคชแล้ว ไม่ดึงซ้ำ (กัน loop)
+  if(window.__regionFetching === wkN) return;
+  window.__regionFetching = wkN;
+  try {
+    const tok = (churchSession && churchSession.token) || '';
+    const url = CHURCH_API + '?action=regional&token=' + encodeURIComponent(tok) + '&date=' + encodeURIComponent(wk);
+    const r = await fetch(url); const d = await r.json();
+    if(d && d.ok && d.data){
+      window.__regionSheet[wkN] = d.data;
+      const vv = (document.getElementById('db-view')||{}).value;
+      const cur = (document.getElementById('db-range')||{}).value;
+      if(vv === '4' && normalizeDateStr(cur) === wkN && typeof renderDash === 'function') renderDash();
+    }
+  } catch(e){ /* ยังไม่ deploy route regional หรือออฟไลน์ → ใช้ค่าคำนวณในเครื่องแทน */ }
+  window.__regionFetching = null;
+}
+
+// [v23] ยืนยัน & บันทึกค่ากรอกมือ (ผส./การติดตาม) ขึ้นชีต SUMMARY ส่งภาค
+async function churchSaveRegional(){
+  const wkSel = document.getElementById('db-range'); const wk = wkSel ? wkSel.value : '';
+  if(!wk) return apiToast('⚠️ เลือกสัปดาห์ก่อน','err');
+  const manual = {};
+  document.querySelectorAll('#region-tbl input[data-dist][data-f]').forEach(inp => {
+    const d = inp.dataset.dist, f = inp.dataset.f, v = inp.value;
+    if(!manual[d]) manual[d] = {};
+    manual[d][f] = (v === '' ? '' : (parseInt(v)||0));
+    try { localStorage.setItem(regManualKey(wk,d,f), v); } catch(e){}
+  });
+  if(!confirm('ยืนยันบันทึกข้อมูลส่งภาค สัปดาห์ '+wk+' ขึ้นชีต SUMMARY ส่งภาค?')) return;
+  showLoading(true); apiToast('📤 กำลังบันทึกขึ้นชีต...','');
+  const payload = JSON.stringify({action:'saveRegional', token:(churchSession&&churchSession.token)||'', date:wk, manual:manual});
+  let okFlag=false, errMsg=null;
+  try {
+    const r = await fetch(CHURCH_API,{method:'POST',mode:'cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:payload});
+    const d = JSON.parse(await r.text());
+    if(d.ok) okFlag=true; else errMsg=d.error;
+  } catch(e){
+    try { await fetch(CHURCH_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:payload}); okFlag=true; }
+    catch(e2){ errMsg=e.message; }
+  }
+  showLoading(false);
+  if(okFlag){
+    apiToast('✅ บันทึกขึ้นชีต SUMMARY ส่งภาค แล้ว','ok');
+    if(window.__regionSheet) delete window.__regionSheet[normalizeDateStr(wk)];
+    churchRefreshRegionFromSheet(wk);
+  } else apiToast('❌ บันทึกไม่สำเร็จ: '+(errMsg||'?'),'err');
 }
 
 // ==================== CHURCH ON CARE CHANGE (v4) ====================
